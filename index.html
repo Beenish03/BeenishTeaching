@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KNN & K-Means Interactive Visualizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f7f8fc;
+    --surface: #ffffff;
+    --surface2: #f0f2f8;
+    --border: #e2e6f0;
+    --text: #1a1d2e;
+    --text-muted: #6b7280;
+    --accent: #4f46e5;
+    --accent-light: #ede9fe;
+    --accent2: #10b981;
+    --accent2-light: #d1fae5;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.06);
+    --shadow-lg: 0 4px 24px rgba(79,70,229,0.13);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: 56px;
+  }
+  .nav-brand {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent);
+    margin-right: 2.5rem;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .nav-tabs { display: flex; gap: 0; height: 100%; }
+  .nav-tab {
+    padding: 0 1.25rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* PAGES */
+  .page { display: none; padding: 2rem; max-width: 1400px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+  }
+  .hero h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+  .hero p { opacity: 0.85; font-size: 0.95rem; max-width: 600px; line-height: 1.6; }
+  .hero-cards { display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .hero-card {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .hero-card span { opacity: 0.7; font-weight: 400; display: block; font-size: 0.78rem; margin-top: 2px; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+  }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start; }
+  .grid-2-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+  /* CONTROLS */
+  .control-group { margin-bottom: 1.25rem; }
+  .control-group:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+  }
+  .label-row { display: flex; justify-content: space-between; align-items: center; }
+  .label-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 1px 7px;
+    border-radius: 4px;
+  }
+  input[type=range] {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border);
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+  select, input[type=text], input[type=number] {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.875rem;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  select:focus, input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-light);
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #4338ca; box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .btn-success { background: var(--accent2); color: white; }
+  .btn-success:hover { background: #059669; }
+  .btn-outline { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+  .btn-outline:hover { background: var(--accent-light); }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+  .btn-block { width: 100%; justify-content: center; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+  .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+  /* FILE UPLOAD */
+  .upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+  .upload-area:hover, .upload-area.drag { border-color: var(--accent); background: var(--accent-light); }
+  .upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+  .upload-area p { font-size: 0.8rem; color: var(--text-muted); }
+  .upload-area strong { font-size: 0.85rem; color: var(--text); }
+
+  /* CANVAS */
+  canvas {
+    display: block;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: white;
+    cursor: crosshair;
+  }
+  .canvas-wrap { position: relative; }
+  .canvas-overlay {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  /* STATUS BAR */
+  .status-bar {
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-top: 0.75rem;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .status-idle { background: var(--surface2); color: var(--text-muted); }
+  .status-running { background: #fef3c7; color: #92400e; }
+  .status-done { background: var(--accent2-light); color: #065f46; }
+  .status-error { background: #fee2e2; color: #991b1b; }
+
+  /* CONFUSION MATRIX */
+  .cm-wrap { overflow-x: auto; margin-top: 1rem; }
+  .cm-table {
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .cm-table th, .cm-table td {
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    min-width: 48px;
+  }
+  .cm-table th { background: var(--surface2); font-weight: 600; color: var(--text-muted); }
+  .cm-diag { background: #d1fae5 !important; font-weight: 700; color: #065f46; }
+  .cm-off { background: #fee2e2 !important; color: #991b1b; }
+  .cm-zero { color: #cbd5e1; }
+
+  /* METRICS */
+  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1rem; }
+  .metric-card {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+  .metric-val { font-size: 1.4rem; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+  .metric-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+
+  /* LEGEND */
+  .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--text-muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* STEP LOG */
+  .step-log {
+    max-height: 180px;
+    overflow-y: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 0.75rem;
+    line-height: 1.7;
+    margin-top: 0.75rem;
+  }
+  .log-entry { color: var(--text-muted); }
+  .log-entry.highlight { color: var(--accent); font-weight: 500; }
+  .log-entry.success { color: var(--accent2); }
+
+  /* SPEED CONTROL */
+  .speed-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.5rem; }
+  .speed-row label { margin: 0; white-space: nowrap; font-size: 0.78rem; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.25rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* TABS inside page */
+  .inner-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .inner-tab {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .inner-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .badge-purple { background: var(--accent-light); color: var(--accent); }
+  .badge-green { background: var(--accent2-light); color: #065f46; }
+
+  /* PROGRESS */
+  .progress-bar-wrap { background: var(--border); border-radius: 99px; height: 6px; margin-top: 0.5rem; overflow: hidden; }
+  .progress-bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.3s; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-2-eq { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .page { padding: 1rem; }
+    .hero { padding: 2rem 1.25rem; }
+    .hero h1 { font-size: 1.4rem; }
+  }
+
+  /* HOME PAGE */
+  .algo-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+  .algo-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 2rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  }
+  .algo-card:hover { border-color: var(--accent); box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+  .algo-card-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .algo-card h3 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+  .algo-card p { font-size: 0.83rem; color: var(--text-muted); line-height: 1.6; }
+  .algo-card-footer { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+
+  @media (max-width: 600px) {
+    .algo-cards { grid-template-columns: 1fr; }
+  }
+
+  /* TOOLTIP */
+  [title] { cursor: help; }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">ML Visualizer</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="showPage('home')">Home</div>
+    <div class="nav-tab" onclick="showPage('knn')">K-Nearest Neighbors</div>
+    <div class="nav-tab" onclick="showPage('kmeans')">K-Means Clustering</div>
+  </div>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <h1>Interactive ML Algorithm Visualizer</h1>
+    <p>Upload your own dataset or generate random data. Step through KNN classification and K-Means clustering, watch hyperparameters change results live, and inspect confusion matrices and metrics.</p>
+    <div class="hero-cards">
+      <div class="hero-card">CSV Upload <span>Bring your own data</span></div>
+      <div class="hero-card">Step-by-Step Animation <span>See every decision</span></div>
+      <div class="hero-card">Confusion Matrix <span>Full evaluation</span></div>
+      <div class="hero-card">Tunable Hyperparams <span>K, distance, split ratio</span></div>
+    </div>
+  </div>
+  <div class="algo-cards">
+    <div class="algo-card" onclick="showPage('knn')">
+      <div class="algo-card-icon">🎯</div>
+      <h3>K-Nearest Neighbors</h3>
+      <p>A supervised classification algorithm. Upload a labeled CSV, choose your feature columns and class label, and watch KNN step through each test point finding its K nearest neighbors before assigning a predicted class.</p>
+      <div class="algo-card-footer">
+        <span class="badge badge-purple">Supervised</span>
+        <span class="badge badge-purple">Classification</span>
+        <span class="badge badge-green">CSV Upload</span>
+      </div>
+    </div>
+    <div class="algo-card" onclick="showPage('kmeans')">
+      <div class="algo-card-icon">⭕</div>
+      <h3>K-Means Clustering</h3>
+      <p>An unsupervised clustering algorithm. Click to place points on a canvas or upload a CSV. Watch centroids initialize and move iteration by iteration as the algorithm converges to stable cluster assignments.</p>
+      <div class="algo-card-footer">
+        <span class="badge badge-purple">Unsupervised</span>
+        <span class="badge badge-purple">Clustering</span>
+        <span class="badge badge-green">CSV Upload</span>
+        <span class="badge badge-green">Random Data</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KNN PAGE -->
+<div class="page" id="page-knn">
+  <div class="section-title">🎯 K-Nearest Neighbors <span class="badge badge-purple">Supervised Classification</span></div>
+
+  <div class="grid-2">
+    <!-- LEFT CONTROLS -->
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+
+      <!-- Data Upload -->
+      <div class="card">
+        <div class="card-title">1. Load Dataset</div>
+        <div class="upload-area" id="knn-drop">
+          <input type="file" id="knn-file" accept=".csv" onchange="knnLoadCSV(event)">
+          <div class="upload-icon">📂</div>
+          <strong>Drop CSV or click to browse</strong>
+          <p>Needs numeric feature columns + a class label column</p>
+        </div>
+        <div style="text-align:center;margin:0.75rem 0;font-size:0.78rem;color:var(--text-muted);">or</div>
+        <button class="btn btn-outline btn-block btn-sm" onclick="knnLoadSample()">Load Sample Iris Dataset</button>
+        <div id="knn-file-info" style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted);"></div>
+      </div>
+
+      <!-- Column Selection -->
+      <div class="card" id="knn-col-card" style="display:none;">
+        <div class="card-title">2. Select Columns</div>
+        <div class="control-group">
+          <label>X Axis (feature 1)</label>
+          <select id="knn-xcol" onchange="knnUpdatePreview()"></select>
+        </div>
+        <div class="control-group">
+          <label>Y Axis (feature 2)</label>
+          <select id="knn-ycol" onchange="knnUpdatePreview()"></select>
+        </div>
+        <div class="control-group">
+          <label>Class Label Column</label>
+          <select id="knn-labelcol" onchange="knnUpdatePreview()"></select>
+        </div>
+      </div>
+
+      <!-- Hyperparameters -->
+      <div class="card">
+        <div class="card-title">3. Hyperparameters</div>
+        <div class="control-group">
+          <div class="label-row">
+            <label>K (neighbors)</label>
+            <span class="label-val" id="knn-k-val">3</span>
+          </div>
+          <input type="range" id="knn-k" min="1" max="15" value="3" oninput="document.getElementById('knn-k-val').textContent=this.value">
+        </div>
+        <div class="control-group">
+          <label>Distance Metric</label>
+          <select id="knn-dist">
+            <option value="euclidean">Euclidean</option>
+            <option value="manhattan">Manhattan</option>
+            <option value="minkowski">Minkowski (p=3)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label>Test Split %</label>
+            <span class="label-val" id="knn-split-val">30</span>
+          </div>
+          <input type="range" id="knn-split" min="10" max="50" value="30" oninput="document.getElementById('knn-split-val').textContent=this.value">
+        </div>
+        <div class="control-group">
+          <label>Animation Speed</label>
+          <select id="knn-speed">
+            <option value="800">Slow</option>
+            <option value="350" selected>Normal</option>
+            <option value="100">Fast</option>
+            <option value="0">Instant</option>
+          </select>
+        </div>
+        <hr class="divider">
+        <div class="btn-group" style="margin-top:0;">
+          <button class="btn btn-primary" id="knn-run-btn" onclick="knnRun()">▶ Run KNN</button>
+          <button class="btn btn-outline btn-sm" onclick="knnReset()">Reset</button>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="knn-progress" style="width:0%"></div>
+        </div>
+        <div class="status-bar status-idle" id="knn-status">Load a dataset to begin.</div>
+      </div>
+
+      <!-- Step Log -->
+      <div class="card">
+        <div class="card-title">Step Log</div>
+        <div class="step-log" id="knn-log"><span class="log-entry">Waiting...</span></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: CANVAS + RESULTS -->
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <div class="card-title" style="margin:0;">Visualization</div>
+          <div id="knn-legend" class="legend"></div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="knn-canvas" width="700" height="460"></canvas>
+          <div class="canvas-overlay" id="knn-overlay">No data loaded</div>
+        </div>
+      </div>
+
+      <!-- Metrics + Confusion Matrix -->
+      <div id="knn-results" style="display:none;">
+        <div class="grid-2-eq">
+          <div class="card">
+            <div class="card-title">Performance Metrics</div>
+            <div class="metrics-grid" id="knn-metrics"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Confusion Matrix</div>
+            <div class="cm-wrap" id="knn-cm"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KMEANS PAGE -->
+<div class="page" id="page-kmeans">
+  <div class="section-title">⭕ K-Means Clustering <span class="badge badge-purple">Unsupervised</span></div>
+
+  <div class="grid-2">
+    <!-- LEFT CONTROLS -->
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+
+      <!-- Data Source -->
+      <div class="card">
+        <div class="card-title">1. Data Source</div>
+        <div class="inner-tabs">
+          <div class="inner-tab active" id="km-tab-canvas" onclick="kmSwitchTab('canvas')">Draw / Generate</div>
+          <div class="inner-tab" id="km-tab-csv" onclick="kmSwitchTab('csv')">Upload CSV</div>
+        </div>
+
+        <div id="km-canvas-controls">
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Click on the canvas to add points, or auto-generate a random dataset.</p>
+          <div class="control-group">
+            <div class="label-row">
+              <label>Number of Clusters to Generate</label>
+              <span class="label-val" id="km-gen-k-val">3</span>
+            </div>
+            <input type="range" id="km-gen-k" min="2" max="8" value="3" oninput="document.getElementById('km-gen-k-val').textContent=this.value">
+          </div>
+          <div class="control-group">
+            <div class="label-row">
+              <label>Points per Cluster</label>
+              <span class="label-val" id="km-gen-n-val">30</span>
+            </div>
+            <input type="range" id="km-gen-n" min="10" max="80" value="30" oninput="document.getElementById('km-gen-n-val').textContent=this.value">
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="kmGenerate()">⚡ Auto-Generate</button>
+            <button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:none;" onclick="kmClearCanvas()">Clear</button>
+          </div>
+        </div>
+
+        <div id="km-csv-controls" style="display:none;">
+          <div class="upload-area" id="km-drop">
+            <input type="file" id="km-file" accept=".csv" onchange="kmLoadCSV(event)">
+            <div class="upload-icon">📂</div>
+            <strong>Drop CSV or click to browse</strong>
+            <p>Numeric columns only</p>
+          </div>
+          <div id="km-file-info" style="margin-top:0.75rem;font-size:0.78rem;color:var(--text-muted);"></div>
+          <div id="km-col-select" style="display:none;margin-top:0.75rem;">
+            <div class="control-group">
+              <label>X Axis Column</label>
+              <select id="km-xcol" onchange="kmUpdateFromCSV()"></select>
+            </div>
+            <div class="control-group">
+              <label>Y Axis Column</label>
+              <select id="km-ycol" onchange="kmUpdateFromCSV()"></select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hyperparameters -->
+      <div class="card">
+        <div class="card-title">2. Hyperparameters</div>
+        <div class="control-group">
+          <div class="label-row">
+            <label>K (clusters)</label>
+            <span class="label-val" id="km-k-val">3</span>
+          </div>
+          <input type="range" id="km-k" min="2" max="10" value="3" oninput="document.getElementById('km-k-val').textContent=this.value">
+        </div>
+        <div class="control-group">
+          <label>Initialization Method</label>
+          <select id="km-init">
+            <option value="random">Random</option>
+            <option value="kmeans++">K-Means++ (smart init)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <div class="label-row">
+            <label>Max Iterations</label>
+            <span class="label-val" id="km-maxiter-val">20</span>
+          </div>
+          <input type="range" id="km-maxiter" min="3" max="50" value="20" oninput="document.getElementById('km-maxiter-val').textContent=this.value">
+        </div>
+        <div class="control-group">
+          <label>Animation Speed</label>
+          <select id="km-speed">
+            <option value="1000">Slow</option>
+            <option value="500" selected>Normal</option>
+            <option value="150">Fast</option>
+            <option value="0">Instant</option>
+          </select>
+        </div>
+        <hr class="divider">
+        <div class="btn-group" style="margin-top:0;">
+          <button class="btn btn-primary" id="km-run-btn" onclick="kmRun()">▶ Run K-Means</button>
+          <button class="btn btn-outline btn-sm" onclick="kmReset()">Reset</button>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="km-progress" style="width:0%"></div>
+        </div>
+        <div class="status-bar status-idle" id="km-status">Add data or generate points to begin.</div>
+      </div>
+
+      <!-- Step Log -->
+      <div class="card">
+        <div class="card-title">Iteration Log</div>
+        <div class="step-log" id="km-log"><span class="log-entry">Waiting...</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT CANVAS + METRICS -->
+    <div style="display:flex;flex-direction:column;gap:1rem;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <div class="card-title" style="margin:0;">Visualization</div>
+          <div id="km-legend" class="legend"></div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="km-canvas" width="700" height="460"></canvas>
+          <div class="canvas-overlay" id="km-overlay">Click canvas to add points</div>
+        </div>
+      </div>
+
+      <div id="km-results" style="display:none;">
+        <div class="card">
+          <div class="card-title">Clustering Metrics</div>
+          <div class="metrics-grid" id="km-metrics" style="grid-template-columns:repeat(4,1fr);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// UTILITIES
+// ============================================================
+const COLORS = [
+  '#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6',
+  '#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6'
+];
+const LIGHT_COLORS = [
+  '#e0e7ff','#d1fae5','#fef3c7','#fee2e2','#ede9fe',
+  '#cffafe','#fce7f3','#f7fee7','#ffedd5','#ccfbf1'
+];
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const tabs = document.querySelectorAll('.nav-tab');
+  const map = {home:0, knn:1, kmeans:2};
+  tabs[map[id]].classList.add('active');
+}
+
+function dist(a, b, metric='euclidean') {
+  if (metric === 'euclidean') {
+    return Math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2);
+  } else if (metric === 'manhattan') {
+    return Math.abs(a[0]-b[0]) + Math.abs(a[1]-b[1]);
+  } else {
+    return (Math.abs(a[0]-b[0])**3 + Math.abs(a[1]-b[1])**3) ** (1/3);
+  }
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g,''));
+  const rows = lines.slice(1).map(line => {
+    const vals = line.split(',').map(v => v.trim().replace(/"/g,''));
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = vals[i]);
+    return obj;
+  }).filter(r => Object.values(r).some(v => v !== ''));
+  return { headers, rows };
+}
+
+function logMsg(logId, msg, type='') {
+  const log = document.getElementById(logId);
+  const entry = document.createElement('div');
+  entry.className = 'log-entry ' + type;
+  entry.textContent = msg;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+}
+
+function clearLog(logId) {
+  document.getElementById(logId).innerHTML = '';
+}
+
+function setStatus(id, msg, type='idle') {
+  const el = document.getElementById(id);
+  el.className = 'status-bar status-' + type;
+  el.textContent = msg;
+}
+
+function setProgress(id, pct) {
+  document.getElementById(id).style.width = pct + '%';
+}
+
+function sleep(ms) {
+  if (ms <= 0) return Promise.resolve();
+  return new Promise(r => setTimeout(r, ms));
+}
+
+// ============================================================
+// KNN
+// ============================================================
+let knnData = null;
+let knnRunning = false;
+let knnCancelFlag = false;
+
+function knnLoadCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = parseCSV(ev.target.result);
+      knnData = parsed;
+      knnSetupColumns();
+      document.getElementById('knn-file-info').textContent = `Loaded: ${file.name} — ${parsed.rows.length} rows, ${parsed.headers.length} columns`;
+    } catch(err) {
+      setStatus('knn-status', 'Error parsing CSV: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function knnLoadSample() {
+  // Iris-like sample dataset
+  const headers = ['sepal_length','sepal_width','petal_length','petal_width','species'];
+  const raw = [
+    [5.1,3.5,1.4,0.2,'setosa'],[4.9,3.0,1.4,0.2,'setosa'],[4.7,3.2,1.3,0.2,'setosa'],
+    [4.6,3.1,1.5,0.2,'setosa'],[5.0,3.6,1.4,0.2,'setosa'],[5.4,3.9,1.7,0.4,'setosa'],
+    [4.6,3.4,1.4,0.3,'setosa'],[5.0,3.4,1.5,0.2,'setosa'],[4.4,2.9,1.4,0.2,'setosa'],
+    [4.9,3.1,1.5,0.1,'setosa'],[5.4,3.7,1.5,0.2,'setosa'],[4.8,3.4,1.6,0.2,'setosa'],
+    [4.8,3.0,1.4,0.1,'setosa'],[4.3,3.0,1.1,0.1,'setosa'],[5.8,4.0,1.2,0.2,'setosa'],
+    [5.7,4.4,1.5,0.4,'setosa'],[5.4,3.9,1.3,0.4,'setosa'],[5.1,3.5,1.4,0.3,'setosa'],
+    [5.7,3.8,1.7,0.3,'setosa'],[5.1,3.8,1.5,0.3,'setosa'],
+    [7.0,3.2,4.7,1.4,'versicolor'],[6.4,3.2,4.5,1.5,'versicolor'],[6.9,3.1,4.9,1.5,'versicolor'],
+    [5.5,2.3,4.0,1.3,'versicolor'],[6.5,2.8,4.6,1.5,'versicolor'],[5.7,2.8,4.5,1.3,'versicolor'],
+    [6.3,3.3,4.7,1.6,'versicolor'],[4.9,2.4,3.3,1.0,'versicolor'],[6.6,2.9,4.6,1.3,'versicolor'],
+    [5.2,2.7,3.9,1.4,'versicolor'],[5.0,2.0,3.5,1.0,'versicolor'],[5.9,3.0,4.2,1.5,'versicolor'],
+    [6.0,2.2,4.0,1.0,'versicolor'],[6.1,2.9,4.7,1.4,'versicolor'],[5.6,2.9,3.6,1.3,'versicolor'],
+    [6.7,3.1,4.4,1.4,'versicolor'],[5.6,3.0,4.5,1.5,'versicolor'],[5.8,2.7,4.1,1.0,'versicolor'],
+    [6.2,2.2,4.5,1.5,'versicolor'],[5.6,2.5,3.9,1.1,'versicolor'],
+    [6.3,3.3,6.0,2.5,'virginica'],[5.8,2.7,5.1,1.9,'virginica'],[7.1,3.0,5.9,2.1,'virginica'],
+    [6.3,2.9,5.6,1.8,'virginica'],[6.5,3.0,5.8,2.2,'virginica'],[7.6,3.0,6.6,2.1,'virginica'],
+    [4.9,2.5,4.5,1.7,'virginica'],[7.3,2.9,6.3,1.8,'virginica'],[6.7,2.5,5.8,1.8,'virginica'],
+    [7.2,3.6,6.1,2.5,'virginica'],[6.5,3.2,5.1,2.0,'virginica'],[6.4,2.7,5.3,1.9,'virginica'],
+    [6.8,3.0,5.5,2.1,'virginica'],[5.7,2.5,5.0,2.0,'virginica'],[5.8,2.8,5.1,2.4,'virginica'],
+    [6.4,3.2,5.3,2.3,'virginica'],[6.5,3.0,5.5,1.8,'virginica'],[7.7,3.8,6.7,2.2,'virginica'],
+    [7.7,2.6,6.9,2.3,'virginica'],[6.0,2.2,5.0,1.5,'virginica'],
+  ];
+  const rows = raw.map(r => {
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = r[i]);
+    return obj;
+  });
+  knnData = { headers, rows };
+  knnSetupColumns();
+  document.getElementById('knn-file-info').textContent = `Loaded: Sample Iris Dataset — 60 rows, 5 columns`;
+}
+
+function knnSetupColumns() {
+  const { headers } = knnData;
+  ['knn-xcol','knn-ycol','knn-labelcol'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = headers.map((h,i) => `<option value="${h}">${h}</option>`).join('');
+  });
+  document.getElementById('knn-xcol').value = headers[0];
+  document.getElementById('knn-ycol').value = headers[1] || headers[0];
+  document.getElementById('knn-labelcol').value = headers[headers.length-1];
+  document.getElementById('knn-col-card').style.display = 'block';
+  setStatus('knn-status', `Dataset loaded. Configure columns and click Run KNN.`, 'idle');
+  knnUpdatePreview();
+}
+
+function knnGetConfig() {
+  return {
+    xcol: document.getElementById('knn-xcol').value,
+    ycol: document.getElementById('knn-ycol').value,
+    labelcol: document.getElementById('knn-labelcol').value,
+    k: parseInt(document.getElementById('knn-k').value),
+    dist: document.getElementById('knn-dist').value,
+    split: parseInt(document.getElementById('knn-split').value) / 100,
+    speed: parseInt(document.getElementById('knn-speed').value),
+  };
+}
+
+function knnNormalize(points) {
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+  return points.map(p => ({
+    ...p,
+    nx: (p.x - minX) / rangeX,
+    ny: (p.y - minY) / rangeY,
+  }));
+}
+
+function knnUpdatePreview() {
+  if (!knnData) return;
+  const cfg = knnGetConfig();
+  const canvas = document.getElementById('knn-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  const points = knnData.rows.map(r => ({
+    x: parseFloat(r[cfg.xcol]),
+    y: parseFloat(r[cfg.ycol]),
+    label: r[cfg.labelcol],
+  })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+  const labels = [...new Set(points.map(p => p.label))];
+  const colorMap = {};
+  labels.forEach((l,i) => colorMap[l] = COLORS[i % COLORS.length]);
+
+  const norm = knnNormalize(points);
+  const pad = 40;
+
+  // Draw grid
+  ctx.strokeStyle = '#f0f2f8';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=5;i++) {
+    const x = pad + (i/5)*(W-2*pad);
+    const y = pad + (i/5)*(H-2*pad);
+    ctx.beginPath(); ctx.moveTo(x,pad); ctx.lineTo(x,H-pad); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke();
+  }
+
+  norm.forEach(p => {
+    const px = pad + p.nx * (W-2*pad);
+    const py = H - pad - p.ny * (H-2*pad);
+    ctx.beginPath();
+    ctx.arc(px, py, 5, 0, Math.PI*2);
+    ctx.fillStyle = colorMap[p.label];
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // Legend
+  const legendDiv = document.getElementById('knn-legend');
+  legendDiv.innerHTML = labels.map((l,i) =>
+    `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>${l}</div>`
+  ).join('');
+
+  document.getElementById('knn-overlay').textContent = `${points.length} points | ${labels.length} classes`;
+}
+
+function knnReset() {
+  knnCancelFlag = true;
+  knnRunning = false;
+  document.getElementById('knn-run-btn').textContent = '▶ Run KNN';
+  document.getElementById('knn-run-btn').disabled = false;
+  setStatus('knn-status', 'Reset. Adjust parameters and run again.', 'idle');
+  setProgress('knn-progress', 0);
+  clearLog('knn-log');
+  document.getElementById('knn-results').style.display = 'none';
+  if (knnData) knnUpdatePreview();
+}
+
+async function knnRun() {
+  if (knnRunning) { knnCancelFlag = true; return; }
+  if (!knnData) { setStatus('knn-status', 'Load a dataset first.', 'error'); return; }
+
+  knnCancelFlag = false;
+  knnRunning = true;
+  clearLog('knn-log');
+  document.getElementById('knn-results').style.display = 'none';
+  document.getElementById('knn-run-btn').textContent = '⏹ Stop';
+  setProgress('knn-progress', 0);
+
+  const cfg = knnGetConfig();
+  const canvas = document.getElementById('knn-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = 40;
+
+  const allPoints = knnData.rows.map(r => ({
+    x: parseFloat(r[cfg.xcol]),
+    y: parseFloat(r[cfg.ycol]),
+    label: r[cfg.labelcol],
+  })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+  const labels = [...new Set(allPoints.map(p => p.label))];
+  const colorMap = {};
+  labels.forEach((l,i) => colorMap[l] = COLORS[i%COLORS.length]);
+
+  const norm = knnNormalize(allPoints);
+
+  // Shuffle and split
+  const shuffled = [...norm].sort(() => Math.random()-0.5);
+  const splitIdx = Math.floor(shuffled.length * (1-cfg.split));
+  const trainSet = shuffled.slice(0, splitIdx);
+  const testSet = shuffled.slice(splitIdx);
+
+  logMsg('knn-log', `Dataset: ${norm.length} points, ${labels.length} classes`, 'highlight');
+  logMsg('knn-log', `Train: ${trainSet.length} | Test: ${testSet.length}`);
+  logMsg('knn-log', `K=${cfg.k}, Metric=${cfg.dist}`);
+  logMsg('knn-log', '─'.repeat(40));
+
+  setStatus('knn-status', `Running KNN on ${testSet.length} test points...`, 'running');
+
+  const results = [];
+
+  // Helper: canvas coords
+  const cx = (nx) => pad + nx*(W-2*pad);
+  const cy = (ny) => H - pad - ny*(H-2*pad);
+
+  function drawBase(highlight=null, neighborLines=null, currentTest=null) {
+    ctx.clearRect(0,0,W,H);
+
+    // Grid
+    ctx.strokeStyle = '#f0f2f8'; ctx.lineWidth = 1;
+    for (let i=0;i<=5;i++) {
+      const x = pad+(i/5)*(W-2*pad), y = pad+(i/5)*(H-2*pad);
+      ctx.beginPath(); ctx.moveTo(x,pad); ctx.lineTo(x,H-pad); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(W-pad,y); ctx.stroke();
+    }
+
+    // Neighbor lines
+    if (neighborLines && currentTest) {
+      neighborLines.forEach(n => {
+        ctx.beginPath();
+        ctx.moveTo(cx(currentTest.nx), cy(currentTest.ny));
+        ctx.lineTo(cx(n.nx), cy(n.ny));
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4,3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+    }
+
+    // Train points
+    trainSet.forEach(p => {
+      const isNeighbor = neighborLines && neighborLines.includes(p);
+      ctx.beginPath();
+      ctx.arc(cx(p.nx), cy(p.ny), isNeighbor ? 8 : 5, 0, Math.PI*2);
+      ctx.fillStyle = colorMap[p.label];
+      ctx.fill();
+      ctx.strokeStyle = isNeighbor ? '#1e1b4b' : 'white';
+      ctx.lineWidth = isNeighbor ? 2.5 : 1.5;
+      ctx.stroke();
+    });
+
+    // Already-predicted test points
+    results.forEach(r => {
+      const correct = r.predicted === r.actual;
+      ctx.beginPath();
+      ctx.arc(cx(r.p.nx), cy(r.p.ny), 6, 0, Math.PI*2);
+      ctx.fillStyle = correct ? colorMap[r.predicted] : '#ef4444';
+      ctx.fill();
+      ctx.strokeStyle = correct ? '#065f46' : '#7f1d1d';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // Mark correct vs wrong
+      if (!correct) {
+        ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+        const x = cx(r.p.nx), y = cy(r.p.ny);
+        ctx.beginPath(); ctx.moveTo(x-5,y-5); ctx.lineTo(x+5,y+5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x+5,y-5); ctx.lineTo(x-5,y+5); ctx.stroke();
+      }
+    });
+
+    // Current test point (blinking ring)
+    if (currentTest) {
+      ctx.beginPath();
+      ctx.arc(cx(currentTest.nx), cy(currentTest.ny), 9, 0, Math.PI*2);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx(currentTest.nx), cy(currentTest.ny), 5, 0, Math.PI*2);
+      ctx.fillStyle = '#f59e0b';
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < testSet.length; i++) {
+    if (knnCancelFlag) break;
+
+    const tp = testSet[i];
+    setProgress('knn-progress', (i/testSet.length)*100);
+
+    // Draw base with current test highlighted
+    drawBase(null, null, tp);
+    if (cfg.speed > 0) await sleep(cfg.speed * 0.3);
+    if (knnCancelFlag) break;
+
+    // Compute distances
+    const dists = trainSet.map(tr => ({
+      p: tr,
+      d: dist([tp.nx, tp.ny], [tr.nx, tr.ny], cfg.dist)
+    })).sort((a,b) => a.d - b.d);
+
+    const neighbors = dists.slice(0, cfg.k).map(d => d.p);
+
+    // Draw with neighbor lines
+    drawBase(null, neighbors, tp);
+    if (cfg.speed > 0) await sleep(cfg.speed * 0.7);
+    if (knnCancelFlag) break;
+
+    // Vote
+    const votes = {};
+    neighbors.forEach(n => { votes[n.label] = (votes[n.label]||0)+1; });
+    const predicted = Object.entries(votes).sort((a,b)=>b[1]-a[1])[0][0];
+    const actual = tp.label;
+
+    results.push({ p: tp, predicted, actual });
+
+    const correct = predicted === actual;
+    logMsg('knn-log',
+      `[${i+1}/${testSet.length}] Actual: ${actual} → Predicted: ${predicted} ${correct?'✓':'✗'}`,
+      correct ? 'success' : 'highlight'
+    );
+  }
+
+  if (!knnCancelFlag) {
+    drawBase();
+    setProgress('knn-progress', 100);
+
+    const correct = results.filter(r => r.predicted === r.actual).length;
+    const acc = (correct/results.length*100).toFixed(1);
+    setStatus('knn-status', `Done! Accuracy: ${acc}% (${correct}/${results.length} correct)`, 'done');
+    logMsg('knn-log', '─'.repeat(40));
+    logMsg('knn-log', `Accuracy: ${acc}%`, 'success');
+
+    knnShowResults(results, labels, colorMap);
+  }
+
+  knnRunning = false;
+  document.getElementById('knn-run-btn').textContent = '▶ Run KNN';
+}
+
+function knnShowResults(results, labels, colorMap) {
+  const correct = results.filter(r => r.predicted === r.actual).length;
+  const total = results.length;
+  const acc = (correct/total*100).toFixed(1);
+
+  // Per-class precision/recall
+  const tp = {}, fp = {}, fn = {};
+  labels.forEach(l => { tp[l]=0; fp[l]=0; fn[l]=0; });
+  results.forEach(r => {
+    if (r.predicted === r.actual) tp[r.actual]++;
+    else { fp[r.predicted]=(fp[r.predicted]||0)+1; fn[r.actual]=(fn[r.actual]||0)+1; }
+  });
+
+  const precision = labels.map(l => tp[l] / Math.max(1, tp[l]+(fp[l]||0)));
+  const recall = labels.map(l => tp[l] / Math.max(1, tp[l]+(fn[l]||0)));
+  const f1 = labels.map((l,i) => 2 * precision[i]*recall[i] / Math.max(0.001, precision[i]+recall[i]));
+
+  const avgP = (precision.reduce((a,b)=>a+b,0)/labels.length*100).toFixed(1);
+  const avgR = (recall.reduce((a,b)=>a+b,0)/labels.length*100).toFixed(1);
+  const avgF1 = (f1.reduce((a,b)=>a+b,0)/labels.length*100).toFixed(1);
+
+  document.getElementById('knn-metrics').innerHTML = `
+    <div class="metric-card"><div class="metric-val">${acc}%</div><div class="metric-label">Accuracy</div></div>
+    <div class="metric-card"><div class="metric-val">${avgP}%</div><div class="metric-label">Avg Precision</div></div>
+    <div class="metric-card"><div class="metric-val">${avgR}%</div><div class="metric-label">Avg Recall</div></div>
+  `;
+
+  // Confusion Matrix
+  const cm = {};
+  labels.forEach(a => { cm[a]={}; labels.forEach(p => cm[a][p]=0); });
+  results.forEach(r => { if(cm[r.actual] && cm[r.actual][r.predicted]!==undefined) cm[r.actual][r.predicted]++; });
+
+  const maxVal = Math.max(...labels.flatMap(a => labels.map(p => cm[a][p])));
+
+  let cmHtml = `<table class="cm-table">
+    <tr><th></th><th colspan="${labels.length}" style="color:var(--accent)">Predicted</th></tr>
+    <tr><th style="color:var(--accent)">Actual</th>${labels.map(l=>`<th title="${l}">${l.length>8?l.slice(0,7)+'…':l}</th>`).join('')}</tr>`;
+  labels.forEach(actual => {
+    cmHtml += `<tr><th title="${actual}">${actual.length>8?actual.slice(0,7)+'…':actual}</th>`;
+    labels.forEach(pred => {
+      const val = cm[actual][pred];
+      const cls = val===0?'cm-zero':actual===pred?'cm-diag':'cm-off';
+      cmHtml += `<td class="${cls}">${val}</td>`;
+    });
+    cmHtml += '</tr>';
+  });
+  cmHtml += '</table>';
+  document.getElementById('knn-cm').innerHTML = cmHtml;
+  document.getElementById('knn-results').style.display = 'block';
+}
+
+// ============================================================
+// K-MEANS
+// ============================================================
+let kmPoints = [];
+let kmRunning = false;
+let kmCancelFlag = false;
+let kmMode = 'canvas';
+
+function kmSwitchTab(tab) {
+  kmMode = tab;
+  document.getElementById('km-tab-canvas').classList.toggle('active', tab==='canvas');
+  document.getElementById('km-tab-csv').classList.toggle('active', tab==='csv');
+  document.getElementById('km-canvas-controls').style.display = tab==='canvas'?'block':'none';
+  document.getElementById('km-csv-controls').style.display = tab==='csv'?'block':'none';
+  if (tab === 'canvas') {
+    document.getElementById('km-overlay').textContent = 'Click canvas to add points';
+    kmPoints = [];
+    kmDrawPoints();
+  }
+}
+
+function kmLoadCSV(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = parseCSV(ev.target.result);
+      const numCols = parsed.headers.filter(h => !isNaN(parseFloat(parsed.rows[0][h])));
+      const sel1 = document.getElementById('km-xcol');
+      const sel2 = document.getElementById('km-ycol');
+      sel1.innerHTML = numCols.map(h=>`<option value="${h}">${h}</option>`).join('');
+      sel2.innerHTML = numCols.map(h=>`<option value="${h}">${h}</option>`).join('');
+      if (numCols.length > 1) sel2.value = numCols[1];
+      document.getElementById('km-col-select').style.display = 'block';
+      document.getElementById('km-file-info').textContent = `Loaded: ${file.name} — ${parsed.rows.length} rows`;
+      window._kmCSVData = parsed;
+      kmUpdateFromCSV();
+    } catch(err) {
+      setStatus('km-status','Error parsing CSV: '+err.message,'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function kmUpdateFromCSV() {
+  if (!window._kmCSVData) return;
+  const xc = document.getElementById('km-xcol').value;
+  const yc = document.getElementById('km-ycol').value;
+  const canvas = document.getElementById('km-canvas');
+  const W = canvas.width, H = canvas.height, pad = 40;
+
+  const raw = window._kmCSVData.rows.map(r => ({
+    x: parseFloat(r[xc]), y: parseFloat(r[yc])
+  })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+  const minX = Math.min(...raw.map(p=>p.x)), maxX = Math.max(...raw.map(p=>p.x));
+  const minY = Math.min(...raw.map(p=>p.y)), maxY = Math.max(...raw.map(p=>p.y));
+  const rX = maxX-minX||1, rY = maxY-minY||1;
+
+  kmPoints = raw.map(p => ({
+    cx: pad + ((p.x-minX)/rX)*(W-2*pad),
+    cy: H - pad - ((p.y-minY)/rY)*(H-2*pad),
+    cluster: -1
+  }));
+
+  kmDrawPoints();
+  document.getElementById('km-overlay').textContent = `${kmPoints.length} points loaded`;
+  setStatus('km-status', `${kmPoints.length} points loaded from CSV. Click Run K-Means.`, 'idle');
+}
+
+// Canvas click to add points
+document.addEventListener('DOMContentLoaded', () => {
+  const canvas = document.getElementById('km-canvas');
+  canvas.addEventListener('click', e => {
+    if (kmMode !== 'canvas' || kmRunning) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    kmPoints.push({
+      cx: (e.clientX - rect.left) * scaleX,
+      cy: (e.clientY - rect.top) * scaleY,
+      cluster: -1
+    });
+    kmDrawPoints();
+    document.getElementById('km-overlay').textContent = `${kmPoints.length} point${kmPoints.length!==1?'s':''} placed`;
+    if (kmPoints.length >= 2) setStatus('km-status', `${kmPoints.length} points. Click Run K-Means when ready.`, 'idle');
+  });
+});
+
+function kmGenerate() {
+  const k = parseInt(document.getElementById('km-gen-k').value);
+  const n = parseInt(document.getElementById('km-gen-n').value);
+  const canvas = document.getElementById('km-canvas');
+  const W = canvas.width, H = canvas.height, pad = 60;
+  kmPoints = [];
+  for (let c=0;c<k;c++) {
+    const cx = pad + Math.random()*(W-2*pad);
+    const cy = pad + Math.random()*(H-2*pad);
+    for (let i=0;i<n;i++) {
+      const spread = 40 + Math.random()*30;
+      kmPoints.push({
+        cx: cx + (Math.random()-0.5)*spread*2,
+        cy: cy + (Math.random()-0.5)*spread*2,
+        cluster: -1
+      });
+    }
+  }
+  kmDrawPoints();
+  document.getElementById('km-overlay').textContent = `${kmPoints.length} points generated`;
+  setStatus('km-status', `${kmPoints.length} points generated. Click Run K-Means.`, 'idle');
+}
+
+function kmClearCanvas() {
+  kmPoints = [];
+  kmDrawPoints();
+  document.getElementById('km-overlay').textContent = 'Click canvas to add points';
+  setStatus('km-status', 'Canvas cleared. Add or generate points.', 'idle');
+  document.getElementById('km-results').style.display = 'none';
+  clearLog('km-log');
+  setProgress('km-progress', 0);
+}
+
+function kmDrawPoints(centroids=null, voronoi=false) {
+  const canvas = document.getElementById('km-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle = '#f0f2f8'; ctx.lineWidth = 1;
+  for (let i=0;i<=5;i++) {
+    const x = 40+(i/5)*(W-80), y = 40+(i/5)*(H-80);
+    ctx.beginPath(); ctx.moveTo(x,40); ctx.lineTo(x,H-40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(40,y); ctx.lineTo(W-40,y); ctx.stroke();
+  }
+
+  // Voronoi-like background regions (only if centroids set)
+  if (centroids && centroids.length > 0) {
+    for (let px=0; px<W; px+=4) {
+      for (let py=0; py<H; py+=4) {
+        let minD = Infinity, bestC = 0;
+        centroids.forEach((c,i) => {
+          const d = Math.sqrt((px-c.cx)**2+(py-c.cy)**2);
+          if (d < minD) { minD=d; bestC=i; }
+        });
+        ctx.fillStyle = LIGHT_COLORS[bestC % LIGHT_COLORS.length] + 'aa';
+        ctx.fillRect(px,py,4,4);
+      }
+    }
+  }
+
+  // Points
+  kmPoints.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.cx, p.cy, 5, 0, Math.PI*2);
+    ctx.fillStyle = p.cluster >= 0 ? COLORS[p.cluster % COLORS.length] : '#94a3b8';
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // Centroids
+  if (centroids) {
+    centroids.forEach((c,i) => {
+      // Star shape
+      ctx.save();
+      ctx.translate(c.cx, c.cy);
+      ctx.beginPath();
+      for (let s=0;s<5;s++) {
+        const angle = (s*4*Math.PI/5) - Math.PI/2;
+        const r = s===0?12:12;
+        if (s===0) ctx.moveTo(Math.cos(angle)*12, Math.sin(angle)*12);
+        else {
+          const innerAngle = ((s-0.5)*4*Math.PI/5) - Math.PI/2;
+          ctx.lineTo(Math.cos(innerAngle)*5, Math.sin(innerAngle)*5);
+          ctx.lineTo(Math.cos(angle)*12, Math.sin(angle)*12);
+        }
+      }
+      ctx.closePath();
+      ctx.fillStyle = COLORS[i % COLORS.length];
+      ctx.fill();
+      ctx.strokeStyle = '#1e1b4b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+}
+
+function kmReset() {
+  kmCancelFlag = true;
+  kmRunning = false;
+  document.getElementById('km-run-btn').textContent = '▶ Run K-Means';
+  document.getElementById('km-run-btn').disabled = false;
+  setStatus('km-status', 'Reset. Adjust parameters and run again.', 'idle');
+  setProgress('km-progress', 0);
+  clearLog('km-log');
+  document.getElementById('km-results').style.display = 'none';
+  kmPoints.forEach(p => p.cluster = -1);
+  kmDrawPoints();
+}
+
+async function kmRun() {
+  if (kmRunning) { kmCancelFlag = true; return; }
+  if (kmPoints.length < 2) { setStatus('km-status','Add at least a few points first.','error'); return; }
+
+  const K = parseInt(document.getElementById('km-k').value);
+  const init = document.getElementById('km-init').value;
+  const maxIter = parseInt(document.getElementById('km-maxiter').value);
+  const speed = parseInt(document.getElementById('km-speed').value);
+
+  if (kmPoints.length < K) { setStatus('km-status',`Need at least ${K} points for K=${K}.`,'error'); return; }
+
+  kmCancelFlag = false;
+  kmRunning = true;
+  clearLog('km-log');
+  document.getElementById('km-results').style.display = 'none';
+  document.getElementById('km-run-btn').textContent = '⏹ Stop';
+  setProgress('km-progress', 0);
+
+  // Reset clusters
+  kmPoints.forEach(p => p.cluster = -1);
+
+  // Initialize centroids
+  let centroids = [];
+  if (init === 'random') {
+    const shuffled = [...kmPoints].sort(()=>Math.random()-0.5);
+    centroids = shuffled.slice(0,K).map(p => ({cx:p.cx,cy:p.cy}));
+    logMsg('km-log', `Init: Random — ${K} centroids placed`, 'highlight');
+  } else {
+    // K-Means++
+    const first = kmPoints[Math.floor(Math.random()*kmPoints.length)];
+    centroids = [{cx:first.cx,cy:first.cy}];
+    while (centroids.length < K) {
+      const dists = kmPoints.map(p => {
+        const minD = Math.min(...centroids.map(c => (p.cx-c.cx)**2+(p.cy-c.cy)**2));
+        return minD;
+      });
+      const total = dists.reduce((a,b)=>a+b,0);
+      let r = Math.random()*total, cum=0;
+      for (let i=0;i<kmPoints.length;i++) {
+        cum += dists[i];
+        if (cum >= r) { centroids.push({cx:kmPoints[i].cx,cy:kmPoints[i].cy}); break; }
+      }
+    }
+    logMsg('km-log', `Init: K-Means++ — ${K} centroids selected`, 'highlight');
+  }
+
+  setStatus('km-status', `Initialized. Running up to ${maxIter} iterations...`, 'running');
+  kmDrawPoints(centroids);
+  if (speed > 0) await sleep(speed);
+
+  let converged = false;
+  let iteration = 0;
+
+  while (!converged && iteration < maxIter && !kmCancelFlag) {
+    iteration++;
+
+    // Assignment step
+    kmPoints.forEach(p => {
+      let minD = Infinity, bestC = 0;
+      centroids.forEach((c,i) => {
+        const d = (p.cx-c.cx)**2+(p.cy-c.cy)**2;
+        if (d < minD) { minD=d; bestC=i; }
+      });
+      p.cluster = bestC;
+    });
+
+    kmDrawPoints(centroids);
+    if (speed > 0) await sleep(speed * 0.5);
+    if (kmCancelFlag) break;
+
+    // Update step
+    const newCentroids = centroids.map((_,i) => {
+      const clusterPts = kmPoints.filter(p => p.cluster === i);
+      if (clusterPts.length === 0) return centroids[i];
+      return {
+        cx: clusterPts.reduce((s,p)=>s+p.cx,0)/clusterPts.length,
+        cy: clusterPts.reduce((s,p)=>s+p.cy,0)/clusterPts.length,
+      };
+    });
+
+    // Check convergence
+    const movement = centroids.reduce((sum,c,i) =>
+      sum + Math.sqrt((c.cx-newCentroids[i].cx)**2+(c.cy-newCentroids[i].cy)**2), 0);
+
+    converged = movement < 0.5;
+    centroids = newCentroids;
+
+    const clusterSizes = centroids.map((_,i) => kmPoints.filter(p=>p.cluster===i).length);
+    logMsg('km-log',
+      `Iter ${iteration}: move=${movement.toFixed(2)} | sizes=[${clusterSizes.join(', ')}]`,
+      converged ? 'success' : ''
+    );
+
+    setProgress('km-progress', (iteration/maxIter)*100);
+    kmDrawPoints(centroids);
+
+    if (converged) {
+      logMsg('km-log', `Converged after ${iteration} iterations!`, 'success');
+    }
+
+    if (speed > 0) await sleep(speed * 0.5);
+  }
+
+  if (!kmCancelFlag) {
+    setProgress('km-progress', 100);
+
+    // Compute WCSS (inertia)
+    const wcss = kmPoints.reduce((sum,p) => {
+      const c = centroids[p.cluster];
+      return sum + (p.cx-c.cx)**2+(p.cy-c.cy)**2;
+    }, 0);
+
+    const msg = converged
+      ? `Converged in ${iteration} iterations.`
+      : `Stopped at ${maxIter} iterations.`;
+    setStatus('km-status', msg, 'done');
+
+    // Legend
+    const legendDiv = document.getElementById('km-legend');
+    legendDiv.innerHTML = centroids.map((_,i) =>
+      `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></div>Cluster ${i+1}</div>`
+    ).join('');
+
+    // Metrics
+    const clusterSizes = centroids.map((_,i) => kmPoints.filter(p=>p.cluster===i).length);
+    const silhouette = computeSilhouette(kmPoints, centroids);
+
+    document.getElementById('km-metrics').innerHTML = `
+      <div class="metric-card"><div class="metric-val">${K}</div><div class="metric-label">Clusters (K)</div></div>
+      <div class="metric-card"><div class="metric-val">${iteration}</div><div class="metric-label">Iterations</div></div>
+      <div class="metric-card"><div class="metric-val">${Math.round(wcss)}</div><div class="metric-label">Inertia (WCSS)</div></div>
+      <div class="metric-card"><div class="metric-val">${silhouette.toFixed(2)}</div><div class="metric-label">Silhouette Score</div></div>
+    `;
+    document.getElementById('km-results').style.display = 'block';
+    kmDrawPoints(centroids);
+  }
+
+  kmRunning = false;
+  document.getElementById('km-run-btn').textContent = '▶ Run K-Means';
+}
+
+function computeSilhouette(points, centroids) {
+  if (centroids.length < 2 || points.length < 4) return 0;
+  const sample = points.length > 100 ? points.filter((_,i)=>i%3===0) : points;
+  let total = 0;
+  sample.forEach(p => {
+    const clusterPts = points.filter(q => q.cluster === p.cluster && q !== p);
+    if (clusterPts.length === 0) return;
+    const a = clusterPts.reduce((s,q) => s+Math.sqrt((p.cx-q.cx)**2+(p.cy-q.cy)**2),0)/clusterPts.length;
+    let b = Infinity;
+    centroids.forEach((_,i) => {
+      if (i === p.cluster) return;
+      const otherPts = points.filter(q => q.cluster === i);
+      if (otherPts.length === 0) return;
+      const meanD = otherPts.reduce((s,q) => s+Math.sqrt((p.cx-q.cx)**2+(p.cy-q.cy)**2),0)/otherPts.length;
+      if (meanD < b) b = meanD;
+    });
+    if (b === Infinity) return;
+    total += (b-a)/Math.max(a,b);
+  });
+  return total / sample.length;
+}
+
+// Resize canvases responsively
+function resizeCanvases() {
+  ['knn-canvas','km-canvas'].forEach(id => {
+    const canvas = document.getElementById(id);
+    const parent = canvas.parentElement;
+    const w = parent.clientWidth - 2;
+    if (w > 200) {
+      canvas.style.width = w + 'px';
+      canvas.style.height = Math.round(w * 0.65) + 'px';
+    }
+  });
+}
+window.addEventListener('resize', resizeCanvases);
+document.addEventListener('DOMContentLoaded', () => { setTimeout(resizeCanvases, 100); });
+</script>
+</body>
+</html>
