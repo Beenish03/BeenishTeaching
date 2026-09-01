@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python Data Structure Explorer</title>
+<style>
+  :root{
+    --py-blue:#306998;
+    --py-blue-dark:#1e4a6b;
+    --py-yellow:#FFD43B;
+    --bg:#f4f7fa;
+    --card:#ffffff;
+    --border:#dde3ea;
+    --text:#1f2937;
+    --muted:#64748b;
+    --good:#1a7f4e;
+    --bad:#c0392b;
+    --console-bg:#0f172a;
+    --console-text:#d1f7c4;
+    --console-prompt:#7dd3fc;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  header.topbar{
+    background:linear-gradient(120deg,var(--py-blue) 0%,var(--py-blue-dark) 100%);
+    color:#fff; padding:18px 24px; display:flex; flex-wrap:wrap; align-items:center;
+    justify-content:space-between; gap:14px; box-shadow:0 2px 10px rgba(0,0,0,.12);
+  }
+  .brand{font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:8px;}
+  .brand small{display:block; font-weight:400; font-size:.72rem; opacity:.85; margin-top:2px;}
+  nav.tabs{display:flex; gap:8px; flex-wrap:wrap;}
+  .tab-btn{
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.35); color:#fff;
+    padding:9px 16px; border-radius:999px; font-size:.92rem; cursor:pointer; font-weight:600;
+    transition:.15s ease;
+  }
+  .tab-btn:hover{background:rgba(255,255,255,.24);}
+  .tab-btn.active{background:var(--py-yellow); color:var(--py-blue-dark); border-color:var(--py-yellow);}
+  main{max-width:1180px; margin:0 auto; padding:22px 18px 60px;}
+  .panel{display:none;}
+  .panel.active{display:block; animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+  .grid2{display:grid; grid-template-columns:1.15fr .85fr; gap:20px;}
+  @media (max-width:880px){ .grid2{grid-template-columns:1fr;} }
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:18px; box-shadow:0 1px 3px rgba(15,23,42,.04);
+  }
+  .card h2{margin:0 0 4px; font-size:1.05rem; display:flex; align-items:center; gap:8px;}
+  .card h2 .hint{font-weight:400; font-size:.78rem; color:var(--muted); margin-left:auto;}
+  .card p.help{color:var(--muted); font-size:.86rem; margin:4px 0 12px;}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+  input[type=text], textarea{
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    border:1.5px solid var(--border); border-radius:8px; padding:8px 10px; font-size:.92rem;
+    background:#fbfcfe; color:var(--text); flex:1; min-width:140px;
+  }
+  input[type=text]:focus, textarea:focus{outline:2px solid var(--py-blue); outline-offset:1px;}
+  button.btn{
+    border:none; border-radius:8px; padding:8px 14px; font-size:.88rem; font-weight:600;
+    cursor:pointer; background:var(--py-blue); color:#fff; transition:.12s ease;
+  }
+  button.btn:hover{background:var(--py-blue-dark);}
+  button.btn.secondary{background:#eef2f7; color:var(--py-blue-dark);}
+  button.btn.secondary:hover{background:#e3e9f2;}
+  button.btn.warn{background:#fdecea; color:var(--bad);}
+  button.btn.warn:hover{background:#fbd8d4;}
+  .toggle{display:flex; border:1.5px solid var(--py-blue); border-radius:999px; overflow:hidden;}
+  .toggle button{
+    border:none; background:#fff; color:var(--py-blue); padding:7px 16px; font-weight:600;
+    cursor:pointer; font-size:.86rem;
+  }
+  .toggle button.on{background:var(--py-blue); color:#fff;}
+  .viz{
+    display:flex; gap:8px; flex-wrap:wrap; padding:18px 6px; min-height:70px; align-items:flex-end;
+  }
+  .box{
+    display:flex; flex-direction:column; align-items:center; gap:4px; min-width:44px;
+  }
+  .box .idx{font-size:.7rem; color:var(--muted); font-family:monospace;}
+  .box .idxneg{font-size:.66rem; color:#b45309; font-family:monospace;}
+  .box .val{
+    background:#eef4fb; border:1.5px solid var(--py-blue); border-radius:8px; padding:8px 10px;
+    font-family:monospace; font-size:.92rem; min-width:34px; text-align:center; color:var(--py-blue-dark);
+  }
+  .bubble{
+    background:#eaf6ee; border:1.5px solid var(--good); color:#0f5132; border-radius:999px;
+    padding:7px 16px; font-family:monospace; font-size:.92rem;
+  }
+  .kv-card{
+    background:#fbf6ea; border:1.5px solid #b8860b; border-radius:10px; padding:8px 12px;
+    font-family:monospace; font-size:.9rem; display:flex; gap:6px; align-items:center; color:#5c4200;
+  }
+  .kv-card .k{font-weight:700;}
+  .empty-note{color:var(--muted); font-style:italic; font-size:.88rem; padding:8px 4px;}
+  .methods-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:8px; margin-top:10px;}
+  .method-btn{
+    background:#fff; border:1.5px solid var(--border); border-radius:8px; padding:8px 10px;
+    font-family:monospace; font-size:.84rem; cursor:pointer; text-align:left; color:var(--py-blue-dark);
+    transition:.12s ease; white-space:normal; word-break:break-word; line-height:1.3;
+  }
+  .method-btn:hover{border-color:var(--py-blue); background:#f3f8fd;}
+  .method-btn.selected{background:var(--py-blue); color:#fff; border-color:var(--py-blue);}
+  .method-form{
+    margin-top:14px; padding:14px; border-radius:10px; background:#f7fafc; border:1px dashed var(--border);
+  }
+  .method-form .sig{font-family:monospace; font-weight:700; color:var(--py-blue-dark); font-size:.95rem;}
+  .method-form .desc{color:var(--muted); font-size:.86rem; margin:6px 0 10px;}
+  .param-row{display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;}
+  .param-row label{font-size:.8rem; color:var(--muted); min-width:70px;}
+  .console{
+    background:var(--console-bg); color:var(--console-text); border-radius:10px; padding:14px 16px;
+    font-family:"SFMono-Regular",Consolas,monospace; font-size:.86rem; height:260px; overflow-y:auto;
+  }
+  .console .code{color:var(--console-prompt);}
+  .console .out{color:var(--console-text); white-space:pre-wrap;}
+  .console .err{color:#fca5a5; white-space:pre-wrap;}
+  .console .note{color:#fcd34d; white-space:pre-wrap;}
+  .console-line{margin-bottom:6px;}
+  .facts{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; font-size:.85rem;}
+  .fact{background:#f7fafc; border-radius:8px; padding:8px 10px; border:1px solid var(--border);}
+  .fact b{display:block; color:var(--py-blue-dark);}
+  .callout{
+    background:#fff8e6; border:1px solid #f0d78c; border-radius:10px; padding:10px 14px;
+    font-size:.85rem; color:#6b5314; margin-top:10px;
+  }
+  .result-box{
+    margin-top:10px; padding:10px 12px; background:#eefdf3; border:1px solid #b7e4c7; border-radius:10px;
+    font-family:monospace; font-size:.88rem; color:#0f5132;
+  }
+  footer{text-align:center; color:var(--muted); font-size:.8rem; padding:30px 10px 40px;}
+  .clearbtn{margin-left:auto;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">🐍 Python Data Structure Explorer
+    <small>Click a method, fill in the blanks, and watch Python's rules play out</small>
+  </div>
+  <nav class="tabs" id="tabNav">
+    <button class="tab-btn active" data-tab="list">📋 List &amp; Tuple</button>
+    <button class="tab-btn" data-tab="dict">📖 Dictionary</button>
+    <button class="tab-btn" data-tab="set">🔵 Set</button>
+    <button class="tab-btn" data-tab="str">🔤 String</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ================= LIST & TUPLE ================= -->
+  <section class="panel active" id="panel-list">
+    <div class="card">
+      <h2>📋 List &amp; Tuple <span class="hint">ordered sequences</span></h2>
+      <p class="help">Lists can change after you make them. Tuples look almost the same but are <b>locked</b> once created. Flip the switch to compare.</p>
+      <div class="row" style="margin-bottom:10px;">
+        <div class="toggle" id="listModeToggle">
+          <button data-mode="list" class="on">list</button>
+          <button data-mode="tuple">tuple</button>
+        </div>
+        <input type="text" id="listCreateInput" value="10, 25, 7, 'apple', True">
+        <button class="btn" id="listCreateBtn">Create</button>
+      </div>
+      <div class="viz" id="listViz"></div>
+      <div id="listEmptyNote"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Indexing &amp; slicing</h2>
+        <p class="help">Try things like <code>2</code>, <code>-1</code>, <code>1:3</code>, or <code>::-1</code></p>
+        <div class="row">
+          <input type="text" id="listSliceInput" placeholder="e.g. 1:3">
+          <button class="btn secondary" id="listSliceBtn">Evaluate</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Quick facts</h2>
+        <div class="facts" id="listFacts"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Methods <span class="hint" id="listMethodHint"></span></h2>
+      <div class="methods-grid" id="listMethods"></div>
+      <div class="method-form" id="listForm" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Console log</h2>
+      <div class="console" id="listConsole"></div>
+      <div class="row" style="margin-top:8px;"><button class="btn secondary" id="listClear">Clear log</button></div>
+    </div>
+  </section>
+
+  <!-- ================= DICTIONARY ================= -->
+  <section class="panel" id="panel-dict">
+    <div class="card">
+      <h2>📖 Dictionary <span class="hint">key → value pairs</span></h2>
+      <p class="help">Every key is unique. Keys map to values, and order follows the order you added things.</p>
+      <div class="row" style="margin-bottom:10px;">
+        <input type="text" id="dictCreateInput" value="'name': 'Ana', 'age': 16, 'grade': 'A'">
+        <button class="btn" id="dictCreateBtn">Create</button>
+      </div>
+      <div class="viz" id="dictViz"></div>
+      <div id="dictEmptyNote"></div>
+    </div>
+
+    <div class="card">
+      <h2>Quick facts</h2>
+      <div class="facts" id="dictFacts"></div>
+    </div>
+
+    <div class="card">
+      <h2>Methods</h2>
+      <div class="methods-grid" id="dictMethods"></div>
+      <div class="method-form" id="dictForm" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Console log</h2>
+      <div class="console" id="dictConsole"></div>
+      <div class="row" style="margin-top:8px;"><button class="btn secondary" id="dictClear">Clear log</button></div>
+    </div>
+  </section>
+
+  <!-- ================= SET ================= -->
+  <section class="panel" id="panel-set">
+    <div class="card">
+      <h2>🔵 Set <span class="hint">unique, unordered values</span></h2>
+      <p class="help">Sets automatically drop duplicates and don't remember the order you added things.</p>
+      <div class="row" style="margin-bottom:10px;">
+        <input type="text" id="setCreateInput" value="1, 2, 3, 2, 4, 1">
+        <button class="btn" id="setCreateBtn">Create</button>
+      </div>
+      <div class="viz" id="setViz"></div>
+      <div id="setEmptyNote"></div>
+      <div class="callout">Real Python never promises an order for sets. This tool shows items in the order it stored them so you have something consistent to look at. Don't rely on that order in your own code!</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Quick facts</h2>
+        <div class="facts" id="setFacts"></div>
+      </div>
+      <div class="card">
+        <h2>Result of last set operation</h2>
+        <div id="setResultBox" class="result-box" style="display:none;"></div>
+        <p class="help" id="setResultEmpty">Run union / intersection / difference below to see a new set appear here. The original set stays unchanged.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Methods</h2>
+      <div class="methods-grid" id="setMethods"></div>
+      <div class="method-form" id="setForm" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Console log</h2>
+      <div class="console" id="setConsole"></div>
+      <div class="row" style="margin-top:8px;"><button class="btn secondary" id="setClear">Clear log</button></div>
+    </div>
+  </section>
+
+  <!-- ================= STRING ================= -->
+  <section class="panel" id="panel-str">
+    <div class="card">
+      <h2>🔤 String <span class="hint">immutable text</span></h2>
+      <p class="help">Strings are sequences of characters, just like lists are sequences of items, and like tuples, they can never be changed in place.</p>
+      <div class="row" style="margin-bottom:10px;">
+        <input type="text" id="strCreateInput" value="Hello, Python!">
+        <button class="btn" id="strCreateBtn">Create</button>
+      </div>
+      <div class="viz" id="strViz"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Indexing &amp; slicing</h2>
+        <p class="help">Try things like <code>0</code>, <code>-1</code>, <code>0:5</code>, or <code>::-1</code></p>
+        <div class="row">
+          <input type="text" id="strSliceInput" placeholder="e.g. 0:5">
+          <button class="btn secondary" id="strSliceBtn">Evaluate</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Quick facts</h2>
+        <div class="facts" id="strFacts"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Methods</h2>
+      <div class="methods-grid" id="strMethods"></div>
+      <div class="method-form" id="strForm" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Console log</h2>
+      <div class="console" id="strConsole"></div>
+      <div class="row" style="margin-top:8px;"><button class="btn secondary" id="strClear">Clear log</button></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>Built for classroom use &middot; every action here mirrors real Python behavior, including its error messages.</footer>
+
+<script>
+/* ============================================================
+   ENGINE (parsing + Python-style repr) -- see engine.js for the
+   unit-tested source this was copied from.
+   ============================================================ */
+function mkInt(v){return {k:'int',v:v};}
+function mkFloat(v){return {k:'float',v:v};}
+function mkStr(v){return {k:'str',v:v};}
+function mkBool(v){return {k:'bool',v:v};}
+function mkNone(){return {k:'none'};}
+class PyError extends Error {}
+
+function splitTopLevel(text, sepChar){
+  const parts=[]; let cur=''; let quote=null;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(quote){ cur+=c; if(c===quote && text[i-1]!=='\\') quote=null; }
+    else if(c==="'"||c==='"'){ quote=c; cur+=c; }
+    else if(c===sepChar){ parts.push(cur); cur=''; }
+    else cur+=c;
+  }
+  parts.push(cur);
+  return parts;
+}
+function unescapeStr(inner){
+  return inner.replace(/\\n/g,'\n').replace(/\\t/g,'\t').replace(/\\\\/g,'\\').replace(/\\'/g,"'").replace(/\\"/g,'"');
+}
+function parseScalar(raw){
+  const token=raw.trim();
+  if(token===''){ throw new PyError('I found an empty value. Did you leave an extra comma somewhere?'); }
+  if((token[0]==="'"&&token[token.length-1]==="'"&&token.length>=2)||(token[0]==='"'&&token[token.length-1]==='"'&&token.length>=2)){
+    return mkStr(unescapeStr(token.slice(1,-1)));
+  }
+  if(token==='True') return mkBool(true);
+  if(token==='False') return mkBool(false);
+  if(token==='None') return mkNone();
+  if(/^-?\d+$/.test(token)) return mkInt(parseInt(token,10));
+  if(/^-?\d+\.\d+$/.test(token)||/^-?\d+\.\d+[eE][+-]?\d+$/.test(token)) return mkFloat(parseFloat(token));
+  if(/^[A-Za-z_][A-Za-z0-9_]*$/.test(token)){
+    throw new PyError(`"${token}" looks like text, so it needs quotes: '${token}'. Python treats unquoted words as variable names.`);
+  }
+  throw new PyError(`I couldn't understand the value "${token}".`);
+}
+function stripOuterBrackets(text){
+  const t=text.trim();
+  if(t.length>=2){
+    const pairs={'[':']','(':')','{':'}'};
+    const open=t[0];
+    if(pairs[open] && t[t.length-1]===pairs[open]) return {inner:t.slice(1,-1), open:open};
+  }
+  return {inner:t, open:null};
+}
+function parseScalarList(text){
+  const {inner}=stripOuterBrackets(text);
+  const trimmed=inner.trim();
+  if(trimmed==='') return [];
+  const parts=splitTopLevel(trimmed,',').map(s=>s.trim()).filter(s=>s!=='');
+  return parts.map(parseScalar);
+}
+function parseDictLiteral(text){
+  const {inner}=stripOuterBrackets(text);
+  const trimmed=inner.trim();
+  if(trimmed==='') return [];
+  const parts=splitTopLevel(trimmed,',').map(s=>s.trim()).filter(s=>s!=='');
+  return parts.map(part=>{
+    const kv=splitTopLevel(part,':');
+    if(kv.length<2) throw new PyError(`"${part}" is missing a ":" between the key and the value.`);
+    const key=parseScalar(kv[0]);
+    const value=parseScalar(kv.slice(1).join(':'));
+    return [key,value];
+  });
+}
+function parseSingleScalar(text){
+  const list=parseScalarList(text);
+  if(list.length!==1) throw new PyError('Please enter exactly one value here.');
+  return list[0];
+}
+function reprStr(s){
+  const hasSingle=s.includes("'"); const hasDouble=s.includes('"');
+  const quote=(hasSingle && !hasDouble) ? '"' : "'";
+  const escaped=s.replace(/\\/g,'\\\\').split(quote).join('\\'+quote).replace(/\n/g,'\\n').replace(/\t/g,'\\t');
+  return quote+escaped+quote;
+}
+function reprScalar(x){
+  switch(x.k){
+    case 'int': return String(x.v);
+    case 'float': return Number.isInteger(x.v) ? x.v.toFixed(1) : String(x.v);
+    case 'str': return reprStr(x.v);
+    case 'bool': return x.v ? 'True' : 'False';
+    case 'none': return 'None';
+    default: return String(x);
+  }
+}
+function reprList(items){ return '['+items.map(reprScalar).join(', ')+']'; }
+function reprTuple(items){ if(items.length===1) return '('+reprScalar(items[0])+',)'; return '('+items.map(reprScalar).join(', ')+')'; }
+function reprSet(items){ if(items.length===0) return 'set()'; return '{'+items.map(reprScalar).join(', ')+'}'; }
+function reprDict(pairs){ if(pairs.length===0) return '{}'; return '{'+pairs.map(([k,v])=>reprScalar(k)+': '+reprScalar(v)).join(', ')+'}'; }
+function scalarEquals(a,b){
+  if(a.k==='none'&&b.k==='none') return true;
+  const numeric=(t)=>t==='int'||t==='float'||t==='bool';
+  if(numeric(a.k)&&numeric(b.k)){
+    const av=a.k==='bool'?(a.v?1:0):a.v;
+    const bv=b.k==='bool'?(b.v?1:0):b.v;
+    return av===bv;
+  }
+  if(a.k==='str'&&b.k==='str') return a.v===b.v;
+  return false;
+}
+function sortKey(x){
+  if(x.k==='bool') return x.v?1:0;
+  if(x.k==='int'||x.k==='float') return x.v;
+  if(x.k==='str') return x.v;
+  return null;
+}
+function isNumericKind(k){ return k==='int'||k==='float'||k==='bool'; }
+
+/* ---------- shared slice/index evaluator (works on arrays of scalars) ---------- */
+function parseIndexOrSlice(expr){
+  expr=expr.trim();
+  if(expr.includes(':')){
+    const parts=expr.split(':');
+    if(parts.length>3) throw new PyError('too many colons in a slice');
+    const num=(s)=> s.trim()==='' ? null : (() => { if(!/^-?\d+$/.test(s.trim())) throw new PyError(`slice indices must be integers, not '${s.trim()}'`); return parseInt(s.trim(),10); })();
+    return {type:'slice', start:num(parts[0]), stop:num(parts[1]), step: parts.length===3?num(parts[2]):null};
+  }
+  if(!/^-?\d+$/.test(expr)) throw new PyError(`indices must be integers, not '${expr}'`);
+  return {type:'index', i:parseInt(expr,10)};
+}
+function applySliceToArray(arr, parsed, kindLabel){
+  if(parsed.type==='index'){
+    let i=parsed.i;
+    const real = i<0 ? arr.length+i : i;
+    if(real<0 || real>=arr.length) throw new PyError(`IndexError: ${kindLabel} index out of range`);
+    return {single:true, value:arr[real]};
+  }
+  let step = parsed.step===null ? 1 : parsed.step;
+  if(step===0) throw new PyError('ValueError: slice step cannot be zero');
+  const len=arr.length;
+  let start, stop;
+  if(step>0){
+    start = parsed.start===null ? 0 : (parsed.start<0 ? Math.max(len+parsed.start,0) : Math.min(parsed.start,len));
+    stop = parsed.stop===null ? len : (parsed.stop<0 ? Math.max(len+parsed.stop,0) : Math.min(parsed.stop,len));
+  } else {
+    start = parsed.start===null ? len-1 : (parsed.start<0 ? len+parsed.start : Math.min(parsed.start,len-1));
+    stop = parsed.stop===null ? -1 : (parsed.stop<0 ? len+parsed.stop : parsed.stop);
+  }
+  const out=[];
+  if(step>0){ for(let i=start;i<stop;i+=step) out.push(arr[i]); }
+  else { for(let i=start;i>stop;i+=step) out.push(arr[i]); }
+  return {single:false, value:out};
+}
+
+/* ============================================================
+   SHARED UI HELPERS
+   ============================================================ */
+function el(tag, cls, html){ const e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
+
+function logCode(consoleEl, code){
+  const line=el('div','console-line'); line.innerHTML = '<span class="code">&gt;&gt;&gt; '+escapeHtml(code)+'</span>';
+  consoleEl.appendChild(line); consoleEl.scrollTop=consoleEl.scrollHeight;
+}
+function logOut(consoleEl, text){
+  const line=el('div','console-line'); line.innerHTML = '<span class="out">'+escapeHtml(text)+'</span>';
+  consoleEl.appendChild(line); consoleEl.scrollTop=consoleEl.scrollHeight;
+}
+function logErr(consoleEl, text){
+  const line=el('div','console-line'); line.innerHTML = '<span class="err">'+escapeHtml(text)+'</span>';
+  consoleEl.appendChild(line); consoleEl.scrollTop=consoleEl.scrollHeight;
+}
+function logNote(consoleEl, text){
+  const line=el('div','console-line'); line.innerHTML = '<span class="note"># '+escapeHtml(text)+'</span>';
+  consoleEl.appendChild(line); consoleEl.scrollTop=consoleEl.scrollHeight;
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function buildMethodGrid(container, methods, onSelect){
+  container.innerHTML='';
+  methods.forEach((m,idx)=>{
+    const b=el('button','method-btn', m.sig);
+    b.addEventListener('click', ()=>{
+      container.querySelectorAll('.method-btn').forEach(x=>x.classList.remove('selected'));
+      b.classList.add('selected');
+      onSelect(m);
+    });
+    container.appendChild(b);
+  });
+}
+
+function buildMethodForm(formEl, method, onRun){
+  formEl.style.display='block';
+  formEl.innerHTML='';
+  const sig=el('div','sig', method.sig);
+  const desc=el('div','desc', method.desc);
+  formEl.appendChild(sig); formEl.appendChild(desc);
+  const inputs=[];
+  (method.params||[]).forEach(p=>{
+    const row=el('div','param-row');
+    const label=el('label',null,p.name+(p.optional?' (optional)':''));
+    const input=document.createElement('input');
+    input.type='text'; input.placeholder=p.placeholder||''; input.style.flex='1';
+    row.appendChild(label); row.appendChild(input);
+    formEl.appendChild(row);
+    inputs.push(input);
+  });
+  const runBtn=el('button','btn', null, 'Run');
+  runBtn.textContent='Run '+method.sig;
+  runBtn.addEventListener('click', ()=>{
+    const values=inputs.map(i=>i.value);
+    onRun(values);
+  });
+  formEl.appendChild(runBtn);
+}
+
+/* ============================================================
+   LIST & TUPLE TAB
+   ============================================================ */
+const listState = { mode:'list', items:[] };
+const listConsoleEl=document.getElementById('listConsole');
+
+function listMethodDefs(){
+  if(listState.mode==='tuple'){
+    return [
+      {sig:'.count(x)', params:[{name:'x',placeholder:"e.g. 7"}], desc:'Counts how many times x appears.',
+        run:(args)=>{ const x=parseSingleScalar(args[0]); const n=listState.items.filter(v=>scalarEquals(v,x)).length; return {ret:String(n)}; }},
+      {sig:'.index(x)', params:[{name:'x',placeholder:"e.g. 7"}], desc:'Finds the position of the first x.',
+        run:(args)=>{ const x=parseSingleScalar(args[0]); const i=listState.items.findIndex(v=>scalarEquals(v,x)); if(i===-1) throw new PyError('ValueError: tuple.index(x): x not in tuple'); return {ret:String(i)}; }},
+      {sig:'len(t)', params:[], desc:'Number of items in the tuple.',
+        run:()=>({ret:String(listState.items.length)})},
+      {sig:'t[0] = 99  (try it!)', params:[], desc:'Tuples are locked once created, so this always fails.',
+        run:()=>{ throw new PyError("TypeError: 'tuple' object does not support item assignment"); }},
+      {sig:'unpack: a, b, c = t', params:[], desc:'Splits the tuple into separate variables, one per item.',
+        run:()=>{
+          const names='abcdefghijklmnopqrstuvwxyz'.split('');
+          const n=listState.items.length;
+          const targetNames=names.slice(0,Math.max(n,1)).join(', ');
+          return {custom:true, code:`${names.slice(0,n).join(', ')} = t`, out:listState.items.map((v,i)=>`${names[i]} = ${reprScalar(v)}`).join('\n')};
+        }},
+    ];
+  }
+  return [
+    {sig:'.append(x)', params:[{name:'x',placeholder:"e.g. 7 or 'kiwi'"}], desc:'Adds x to the end of the list.',
+      run:(args)=>{ const x=parseSingleScalar(args[0]); listState.items.push(x); return {ret:'None'}; }},
+    {sig:'.insert(i, x)', params:[{name:'i',placeholder:'e.g. 0'},{name:'x',placeholder:"e.g. 'new'"}], desc:'Inserts x at position i, shifting the rest right.',
+      run:(args)=>{ const i=parseIndexArg(args[0]); const x=parseSingleScalar(args[1]); const real=Math.max(0,Math.min(i<0?listState.items.length+i:i, listState.items.length)); listState.items.splice(real,0,x); return {ret:'None'}; }},
+    {sig:'.remove(x)', params:[{name:'x',placeholder:'e.g. 7'}], desc:'Removes the first item equal to x.',
+      run:(args)=>{ const x=parseSingleScalar(args[0]); const i=listState.items.findIndex(v=>scalarEquals(v,x)); if(i===-1) throw new PyError('ValueError: list.remove(x): x not in list'); listState.items.splice(i,1); return {ret:'None'}; }},
+    {sig:'.pop(i)', params:[{name:'i',placeholder:'blank = last item', optional:true}], desc:'Removes and returns the item at position i (default: the last item).',
+      run:(args)=>{
+        if(listState.items.length===0) throw new PyError('IndexError: pop from empty list');
+        let i = args[0]==='' ? listState.items.length-1 : parseIndexArg(args[0]);
+        const real = i<0 ? listState.items.length+i : i;
+        if(real<0||real>=listState.items.length) throw new PyError('IndexError: pop index out of range');
+        const [v]=listState.items.splice(real,1); return {ret:reprScalar(v)};
+      }},
+    {sig:'.sort()', params:[], desc:'Sorts the list in place, smallest to largest.',
+      run:()=>{
+        const allNumeric=listState.items.every(v=>isNumericKind(v.k));
+        const allStr=listState.items.every(v=>v.k==='str');
+        if(!allNumeric && !allStr) throw new PyError("TypeError: '<' not supported between instances of different, unsortable types");
+        listState.items.sort((a,b)=>{ const ka=sortKey(a), kb=sortKey(b); return ka<kb?-1:ka>kb?1:0; });
+        return {ret:'None'};
+      }},
+    {sig:'.reverse()', params:[], desc:'Reverses the list in place.',
+      run:()=>{ listState.items.reverse(); return {ret:'None'}; }},
+    {sig:'.extend(iterable)', params:[{name:'items',placeholder:"e.g. 8, 9, 'x'"}], desc:'Appends every item from another list onto this one.',
+      run:(args)=>{ const more=parseScalarList(args[0]); listState.items.push(...more); return {ret:'None'}; }},
+    {sig:'.index(x)', params:[{name:'x',placeholder:'e.g. 7'}], desc:'Finds the position of the first x.',
+      run:(args)=>{ const x=parseSingleScalar(args[0]); const i=listState.items.findIndex(v=>scalarEquals(v,x)); if(i===-1) throw new PyError('ValueError: list.index(x): x not in list'); return {ret:String(i)}; }},
+    {sig:'.count(x)', params:[{name:'x',placeholder:'e.g. 7'}], desc:'Counts how many times x appears.',
+      run:(args)=>{ const x=parseSingleScalar(args[0]); const n=listState.items.filter(v=>scalarEquals(v,x)).length; return {ret:String(n)}; }},
+    {sig:'.clear()', params:[], desc:'Removes every item, leaving an empty list.',
+      run:()=>{ listState.items=[]; return {ret:'None'}; }},
+    {sig:'.copy()', params:[], desc:'Returns a shallow copy: a brand new list with the same items.',
+      run:()=>{ return {ret:reprList(listState.items)}; }},
+    {sig:'len(lst)', params:[], desc:'Number of items in the list.',
+      run:()=>({ret:String(listState.items.length)})},
+  ];
+}
+function parseIndexArg(s){
+  const t=s.trim();
+  if(!/^-?\d+$/.test(t)) throw new PyError(`TypeError: list index must be an integer, not '${t}'`);
+  return parseInt(t,10);
+}
+
+function renderListViz(){
+  const viz=document.getElementById('listViz'); viz.innerHTML='';
+  const note=document.getElementById('listEmptyNote'); note.innerHTML='';
+  if(listState.items.length===0){ note.innerHTML='<div class="empty-note">This '+listState.mode+' is empty.</div>'; return; }
+  listState.items.forEach((v,i)=>{
+    const box=el('div','box');
+    box.appendChild(el('div','idx', String(i)));
+    box.appendChild(el('div','val', escapeHtml(reprScalar(v))));
+    box.appendChild(el('div','idxneg', String(i-listState.items.length)));
+    viz.appendChild(box);
+  });
+}
+function renderListFacts(){
+  const f=document.getElementById('listFacts');
+  if(listState.mode==='list'){
+    f.innerHTML = `
+      <div class="fact"><b>Mutable?</b>Yes, change it anytime</div>
+      <div class="fact"><b>Ordered?</b>Yes, keeps insertion order</div>
+      <div class="fact"><b>Duplicates?</b>Allowed</div>
+      <div class="fact"><b>Written as</b><code>[1, 2, 3]</code></div>`;
+  } else {
+    f.innerHTML = `
+      <div class="fact"><b>Mutable?</b>No, locked after creation</div>
+      <div class="fact"><b>Ordered?</b>Yes, keeps insertion order</div>
+      <div class="fact"><b>Duplicates?</b>Allowed</div>
+      <div class="fact"><b>Written as</b><code>(1, 2, 3)</code></div>`;
+  }
+}
+function refreshListMethods(){
+  const grid=document.getElementById('listMethods');
+  const form=document.getElementById('listForm');
+  form.style.display='none'; form.innerHTML='';
+  buildMethodGrid(grid, listMethodDefs(), (m)=>{
+    buildMethodForm(form, m, (argVals)=>{
+      const argStr = (m.params||[]).map((p,i)=>argVals[i]).filter(v=>v!=='').join(', ');
+      const varName = listState.mode==='tuple' ? 't' : 'lst';
+      const codeLine = m.sig.startsWith('unpack') ? null :
+        (m.sig.includes('=') ? m.sig : `${varName}${m.sig.startsWith('len') ? '' : ''}`);
+      let displayCode;
+      if(m.sig.startsWith('len(')) displayCode = `len(${varName})`;
+      else if(m.sig.includes('=')) displayCode = m.sig;
+      else if(m.sig.startsWith('unpack')) displayCode = null;
+      else displayCode = `${varName}${m.sig.slice(0, m.sig.indexOf('('))}(${argStr})`;
+      try{
+        const result=m.run(argVals);
+        if(result.custom){
+          logCode(listConsoleEl, result.code);
+          logOut(listConsoleEl, result.out);
+        } else {
+          logCode(listConsoleEl, displayCode);
+          if(result.ret!=='None') logOut(listConsoleEl, result.ret);
+        }
+        renderListViz();
+      } catch(e){
+        logCode(listConsoleEl, displayCode || m.sig);
+        logErr(listConsoleEl, e.message);
+      }
+    });
+  });
+}
+
+document.getElementById('listCreateBtn').addEventListener('click', ()=>{
+  try{
+    listState.items = parseScalarList(document.getElementById('listCreateInput').value);
+    const varName = listState.mode==='tuple' ? 't' : 'lst';
+    const rep = listState.mode==='tuple' ? reprTuple(listState.items) : reprList(listState.items);
+    listConsoleEl.innerHTML='';
+    logCode(listConsoleEl, `${varName} = ${rep}`);
+    renderListViz();
+  } catch(e){ logErr(listConsoleEl, e.message); }
+});
+document.getElementById('listModeToggle').addEventListener('click', (ev)=>{
+  const btn=ev.target.closest('button'); if(!btn) return;
+  listState.mode = btn.dataset.mode;
+  document.querySelectorAll('#listModeToggle button').forEach(b=>b.classList.toggle('on', b===btn));
+  renderListFacts(); refreshListMethods();
+  document.getElementById('listCreateBtn').click();
+});
+document.getElementById('listSliceBtn').addEventListener('click', ()=>{
+  const expr=document.getElementById('listSliceInput').value;
+  const varName = listState.mode==='tuple' ? 't' : 'lst';
+  try{
+    const parsed=parseIndexOrSlice(expr);
+    const res=applySliceToArray(listState.items, parsed, listState.mode);
+    logCode(listConsoleEl, `${varName}[${expr}]`);
+    logOut(listConsoleEl, res.single ? reprScalar(res.value) : (listState.mode==='tuple'?reprTuple(res.value):reprList(res.value)));
+  } catch(e){ logCode(listConsoleEl, `${varName}[${expr}]`); logErr(listConsoleEl, e.message); }
+});
+document.getElementById('listClear').addEventListener('click', ()=>{ listConsoleEl.innerHTML=''; });
+
+listState.items = parseScalarList(document.getElementById('listCreateInput').value);
+renderListFacts(); refreshListMethods(); renderListViz();
+logCode(listConsoleEl, `lst = ${reprList(listState.items)}`);
+
+/* ============================================================
+   DICTIONARY TAB
+   ============================================================ */
+const dictState = { pairs: [] };
+const dictConsoleEl=document.getElementById('dictConsole');
+
+function dictFindIndex(key){ return dictState.pairs.findIndex(([k])=>scalarEquals(k,key)); }
+
+const dictMethods = [
+  {sig:'.get(key)', params:[{name:'key',placeholder:"e.g. 'name'"},{name:'default',placeholder:'optional', optional:true}], desc:'Looks up a key. If missing, returns the default instead of erroring.',
+    run:(args)=>{ const key=parseSingleScalar(args[0]); const i=dictFindIndex(key); if(i!==-1) return {ret:reprScalar(dictState.pairs[i][1])}; if(args[1]!=='') return {ret:reprScalar(parseSingleScalar(args[1]))}; return {ret:'None'}; }},
+  {sig:'.keys()', params:[], desc:'Returns a view of all the keys.',
+    run:()=>({ret:'dict_keys(['+dictState.pairs.map(([k])=>reprScalar(k)).join(', ')+'])'})},
+  {sig:'.values()', params:[], desc:'Returns a view of all the values.',
+    run:()=>({ret:'dict_values(['+dictState.pairs.map(([,v])=>reprScalar(v)).join(', ')+'])'})},
+  {sig:'.items()', params:[], desc:'Returns (key, value) pairs.',
+    run:()=>({ret:'dict_items(['+dictState.pairs.map(([k,v])=>`(${reprScalar(k)}, ${reprScalar(v)})`).join(', ')+'])'})},
+  {sig:'.update({...})', params:[{name:'pairs',placeholder:"e.g. 'age': 17, 'city': 'Lahore'"}], desc:'Adds new keys and overwrites existing ones.',
+    run:(args)=>{ const more=parseDictLiteral(args[0]); more.forEach(([k,v])=>{ const i=dictFindIndex(k); if(i!==-1) dictState.pairs[i][1]=v; else dictState.pairs.push([k,v]); }); return {ret:'None'}; }},
+  {sig:'.pop(key)', params:[{name:'key',placeholder:"e.g. 'age'"},{name:'default',placeholder:'optional', optional:true}], desc:'Removes a key and returns its value.',
+    run:(args)=>{ const key=parseSingleScalar(args[0]); const i=dictFindIndex(key); if(i===-1){ if(args[1]!=='') return {ret:reprScalar(parseSingleScalar(args[1]))}; throw new PyError(`KeyError: ${reprScalar(key)}`); } const [,v]=dictState.pairs.splice(i,1)[0]; return {ret:reprScalar(v)}; }},
+  {sig:'.setdefault(key, default)', params:[{name:'key',placeholder:"e.g. 'city'"},{name:'default',placeholder:"e.g. 'Unknown'"}], desc:'Returns the value if key exists; otherwise sets it to default and returns that.',
+    run:(args)=>{ const key=parseSingleScalar(args[0]); const i=dictFindIndex(key); if(i!==-1) return {ret:reprScalar(dictState.pairs[i][1])}; const def=parseSingleScalar(args[1]); dictState.pairs.push([key,def]); return {ret:reprScalar(def)}; }},
+  {sig:'del d[key]', params:[{name:'key',placeholder:"e.g. 'grade'"}], desc:'Deletes a key permanently. Errors if the key is missing.',
+    run:(args)=>{ const key=parseSingleScalar(args[0]); const i=dictFindIndex(key); if(i===-1) throw new PyError(`KeyError: ${reprScalar(key)}`); dictState.pairs.splice(i,1); return {ret:'None'}; }},
+  {sig:"key in d", params:[{name:'key',placeholder:"e.g. 'name'"}], desc:'Checks whether a key exists (does not look at values).',
+    run:(args)=>{ const key=parseSingleScalar(args[0]); return {ret: dictFindIndex(key)!==-1 ? 'True':'False'}; }},
+  {sig:'.clear()', params:[], desc:'Removes every key-value pair.',
+    run:()=>{ dictState.pairs=[]; return {ret:'None'}; }},
+  {sig:'.copy()', params:[], desc:'Returns a shallow copy: a brand new dict with the same pairs.',
+    run:()=>({ret:reprDict(dictState.pairs)})},
+  {sig:'len(d)', params:[], desc:'Number of key-value pairs.',
+    run:()=>({ret:String(dictState.pairs.length)})},
+];
+
+function renderDictViz(){
+  const viz=document.getElementById('dictViz'); viz.innerHTML='';
+  const note=document.getElementById('dictEmptyNote'); note.innerHTML='';
+  if(dictState.pairs.length===0){ note.innerHTML='<div class="empty-note">This dictionary is empty.</div>'; return; }
+  dictState.pairs.forEach(([k,v])=>{
+    const c=el('div','kv-card');
+    c.innerHTML = `<span class="k">${escapeHtml(reprScalar(k))}</span> &rarr; <span>${escapeHtml(reprScalar(v))}</span>`;
+    viz.appendChild(c);
+  });
+}
+function renderDictFacts(){
+  document.getElementById('dictFacts').innerHTML = `
+    <div class="fact"><b>Mutable?</b>Yes</div>
+    <div class="fact"><b>Ordered?</b>Yes, insertion order</div>
+    <div class="fact"><b>Duplicate keys?</b>Not allowed, last write wins</div>
+    <div class="fact"><b>Written as</b><code>{'k': v}</code></div>`;
+}
+function refreshDictMethods(){
+  const grid=document.getElementById('dictMethods');
+  const form=document.getElementById('dictForm');
+  buildMethodGrid(grid, dictMethods, (m)=>{
+    buildMethodForm(form, m, (argVals)=>{
+      const argStr=(m.params||[]).map((p,i)=>argVals[i]).filter(v=>v!=='');
+      let displayCode;
+      if(m.sig.startsWith('del ')) displayCode = `del d[${argVals[0]}]`;
+      else if(m.sig.includes(' in ')) displayCode = `${argVals[0]} in d`;
+      else if(m.sig.startsWith('len(')) displayCode = 'len(d)';
+      else displayCode = `d${m.sig.slice(0,m.sig.indexOf('('))}(${argStr.join(', ')})`;
+      try{
+        const result=m.run(argVals);
+        logCode(dictConsoleEl, displayCode);
+        if(result.ret!=='None') logOut(dictConsoleEl, result.ret);
+        renderDictViz();
+      } catch(e){
+        logCode(dictConsoleEl, displayCode);
+        logErr(dictConsoleEl, e.message);
+      }
+    });
+  });
+}
+document.getElementById('dictCreateBtn').addEventListener('click', ()=>{
+  try{
+    dictState.pairs = parseDictLiteral(document.getElementById('dictCreateInput').value);
+    dictConsoleEl.innerHTML='';
+    logCode(dictConsoleEl, `d = ${reprDict(dictState.pairs)}`);
+    renderDictViz();
+  } catch(e){ logErr(dictConsoleEl, e.message); }
+});
+document.getElementById('dictClear').addEventListener('click', ()=>{ dictConsoleEl.innerHTML=''; });
+
+renderDictFacts(); refreshDictMethods();
+dictState.pairs = parseDictLiteral(document.getElementById('dictCreateInput').value);
+renderDictViz();
+logCode(dictConsoleEl, `d = ${reprDict(dictState.pairs)}`);
+
+/* ============================================================
+   SET TAB
+   ============================================================ */
+const setState = { items: [] };
+const setConsoleEl=document.getElementById('setConsole');
+
+function dedupe(arr){
+  const out=[];
+  arr.forEach(v=>{ if(!out.some(o=>scalarEquals(o,v))) out.push(v); });
+  return out;
+}
+function otherSetFromInput(text){ return dedupe(parseScalarList(text)); }
+function showSetResult(items){
+  const box=document.getElementById('setResultBox');
+  const emptyMsg=document.getElementById('setResultEmpty');
+  box.style.display='block'; emptyMsg.style.display='none';
+  box.textContent = reprSet(items);
+}
+
+const setMethods = [
+  {sig:'.add(x)', params:[{name:'x',placeholder:'e.g. 5'}], desc:'Adds x. If it is already there, nothing changes.',
+    run:(args)=>{ const x=parseSingleScalar(args[0]); if(!setState.items.some(v=>scalarEquals(v,x))) setState.items.push(x); return {ret:'None'}; }},
+  {sig:'.remove(x)', params:[{name:'x',placeholder:'e.g. 5'}], desc:'Removes x. Errors if x is not in the set.',
+    run:(args)=>{ const x=parseSingleScalar(args[0]); const i=setState.items.findIndex(v=>scalarEquals(v,x)); if(i===-1) throw new PyError(`KeyError: ${reprScalar(x)}`); setState.items.splice(i,1); return {ret:'None'}; }},
+  {sig:'.discard(x)', params:[{name:'x',placeholder:'e.g. 5'}], desc:'Removes x if present. Never errors, unlike .remove().',
+    run:(args)=>{ const x=parseSingleScalar(args[0]); const i=setState.items.findIndex(v=>scalarEquals(v,x)); if(i!==-1) setState.items.splice(i,1); return {ret:'None'}; }},
+  {sig:'.pop()', params:[], desc:'Removes and returns an arbitrary item (Python does not guarantee which one).',
+    run:()=>{ if(setState.items.length===0) throw new PyError('KeyError: pop from an empty set'); const v=setState.items.shift(); return {ret:reprScalar(v)}; }},
+  {sig:'.union(other)', params:[{name:'other',placeholder:'e.g. 3, 4, 5'}], desc:'Returns a NEW set with items from both sets. Originals are unchanged.',
+    run:(args)=>{ const other=otherSetFromInput(args[0]); const res=dedupe([...setState.items, ...other]); showSetResult(res); return {ret:reprSet(res)}; }},
+  {sig:'.intersection(other)', params:[{name:'other',placeholder:'e.g. 3, 4, 5'}], desc:'Returns a NEW set with items found in both sets.',
+    run:(args)=>{ const other=otherSetFromInput(args[0]); const res=setState.items.filter(v=>other.some(o=>scalarEquals(o,v))); showSetResult(res); return {ret:reprSet(res)}; }},
+  {sig:'.difference(other)', params:[{name:'other',placeholder:'e.g. 3, 4, 5'}], desc:'Returns a NEW set with items in this set but not the other.',
+    run:(args)=>{ const other=otherSetFromInput(args[0]); const res=setState.items.filter(v=>!other.some(o=>scalarEquals(o,v))); showSetResult(res); return {ret:reprSet(res)}; }},
+  {sig:'.symmetric_difference(other)', params:[{name:'other',placeholder:'e.g. 3, 4, 5'}], desc:'Returns a NEW set with items in exactly one of the two sets.',
+    run:(args)=>{ const other=otherSetFromInput(args[0]); const res=[...setState.items.filter(v=>!other.some(o=>scalarEquals(o,v))), ...other.filter(v=>!setState.items.some(o=>scalarEquals(o,v)))]; showSetResult(res); return {ret:reprSet(res)}; }},
+  {sig:'.issubset(other)', params:[{name:'other',placeholder:'e.g. 1, 2, 3, 4'}], desc:'True if every item in this set is also in other.',
+    run:(args)=>{ const other=otherSetFromInput(args[0]); const ok=setState.items.every(v=>other.some(o=>scalarEquals(o,v))); return {ret: ok?'True':'False'}; }},
+  {sig:'.issuperset(other)', params:[{name:'other',placeholder:'e.g. 1, 2'}], desc:'True if this set contains every item in other.',
+    run:(args)=>{ const other=otherSetFromInput(args[0]); const ok=other.every(v=>setState.items.some(o=>scalarEquals(o,v))); return {ret: ok?'True':'False'}; }},
+  {sig:'x in s', params:[{name:'x',placeholder:'e.g. 3'}], desc:'Checks membership. Sets are very fast at this.',
+    run:(args)=>{ const x=parseSingleScalar(args[0]); return {ret: setState.items.some(v=>scalarEquals(v,x)) ? 'True':'False'}; }},
+  {sig:'.clear()', params:[], desc:'Removes every item.',
+    run:()=>{ setState.items=[]; return {ret:'None'}; }},
+  {sig:'.copy()', params:[], desc:'Returns a shallow copy: a brand new set with the same items.',
+    run:()=>({ret:reprSet(setState.items)})},
+  {sig:'len(s)', params:[], desc:'Number of items in the set.',
+    run:()=>({ret:String(setState.items.length)})},
+];
+
+function renderSetViz(){
+  const viz=document.getElementById('setViz'); viz.innerHTML='';
+  const note=document.getElementById('setEmptyNote'); note.innerHTML='';
+  if(setState.items.length===0){ note.innerHTML='<div class="empty-note">This set is empty.</div>'; return; }
+  setState.items.forEach(v=>{ viz.appendChild(el('div','bubble', escapeHtml(reprScalar(v)))); });
+}
+function renderSetFacts(){
+  document.getElementById('setFacts').innerHTML = `
+    <div class="fact"><b>Mutable?</b>Yes</div>
+    <div class="fact"><b>Ordered?</b>No, order is not guaranteed</div>
+    <div class="fact"><b>Duplicates?</b>Never, auto-removed</div>
+    <div class="fact"><b>Written as</b><code>{1, 2, 3}</code></div>`;
+}
+function refreshSetMethods(){
+  const grid=document.getElementById('setMethods');
+  const form=document.getElementById('setForm');
+  buildMethodGrid(grid, setMethods, (m)=>{
+    buildMethodForm(form, m, (argVals)=>{
+      const argStr=(m.params||[]).map((p,i)=>argVals[i]).filter(v=>v!=='');
+      let displayCode;
+      if(m.sig==='x in s') displayCode = `${argVals[0]} in s`;
+      else if(m.sig.startsWith('len(')) displayCode = 'len(s)';
+      else displayCode = `s${m.sig.slice(0,m.sig.indexOf('('))}(${argStr.join(', ')})`;
+      try{
+        const result=m.run(argVals);
+        logCode(setConsoleEl, displayCode);
+        if(result.ret!=='None') logOut(setConsoleEl, result.ret);
+        renderSetViz();
+      } catch(e){
+        logCode(setConsoleEl, displayCode);
+        logErr(setConsoleEl, e.message);
+      }
+    });
+  });
+}
+document.getElementById('setCreateBtn').addEventListener('click', ()=>{
+  try{
+    const raw=parseScalarList(document.getElementById('setCreateInput').value);
+    const deduped=dedupe(raw);
+    setState.items=deduped;
+    setConsoleEl.innerHTML='';
+    logCode(setConsoleEl, `s = {${document.getElementById('setCreateInput').value}}`);
+    if(raw.length!==deduped.length) logNote(setConsoleEl, 'duplicate values were automatically dropped');
+    logOut(setConsoleEl, reprSet(setState.items));
+    renderSetViz();
+  } catch(e){ logErr(setConsoleEl, e.message); }
+});
+document.getElementById('setClear').addEventListener('click', ()=>{ setConsoleEl.innerHTML=''; });
+
+renderSetFacts(); refreshSetMethods();
+setState.items = dedupe(parseScalarList(document.getElementById('setCreateInput').value));
+renderSetViz();
+logCode(setConsoleEl, `s = {${document.getElementById('setCreateInput').value}}`);
+logNote(setConsoleEl, 'duplicate values were automatically dropped');
+logOut(setConsoleEl, reprSet(setState.items));
+
+/* ============================================================
+   STRING TAB
+   ============================================================ */
+const strState = { value: '' };
+const strConsoleEl=document.getElementById('strConsole');
+
+const strMethods = [
+  {sig:'.upper()', params:[], desc:'Returns a new, all-uppercase string.', run:()=>({newStr: strState.value.toUpperCase()})},
+  {sig:'.lower()', params:[], desc:'Returns a new, all-lowercase string.', run:()=>({newStr: strState.value.toLowerCase()})},
+  {sig:'.title()', params:[], desc:'Returns a new string with Each Word Capitalized.', run:()=>({newStr: strState.value.replace(/\w\S*/g, w=>w[0].toUpperCase()+w.slice(1).toLowerCase())})},
+  {sig:'.capitalize()', params:[], desc:'Returns a new string with only the first letter capitalized.', run:()=>({newStr: strState.value.length? strState.value[0].toUpperCase()+strState.value.slice(1).toLowerCase() : ''})},
+  {sig:'.strip()', params:[], desc:'Returns a new string with leading/trailing whitespace removed.', run:()=>({newStr: strState.value.trim()})},
+  {sig:'.replace(old, new)', params:[{name:'old',placeholder:"e.g. 'Python'"},{name:'new',placeholder:"e.g. 'World'"}], desc:'Returns a new string with every occurrence of old swapped for new.',
+    run:(args)=>{ const oldV=parseSingleScalar(args[0]); const newV=parseSingleScalar(args[1]); if(oldV.k!=='str'||newV.k!=='str') throw new PyError('TypeError: replace() arguments must be strings'); return {newStr: strState.value.split(oldV.v).join(newV.v)}; }},
+  {sig:'.split(sep)', params:[{name:'sep',placeholder:'blank = any whitespace', optional:true}], desc:'Breaks the string into a list of pieces. Result stays separate: it is a list, not a string.',
+    run:(args)=>{
+      let parts;
+      if(args[0]===''){ parts = strState.value.trim()===''? [] : strState.value.trim().split(/\s+/); }
+      else { const sepV=parseSingleScalar(args[0]); if(sepV.k!=='str') throw new PyError('TypeError: split() separator must be a string'); parts = strState.value.split(sepV.v); }
+      return {list: parts.map(mkStr)};
+    }},
+  {sig:'.join(iterable)', params:[{name:'items',placeholder:"e.g. 'a', 'b', 'c'"}], desc:'Uses the current string as a separator between the given pieces, returning one new string.',
+    run:(args)=>{ const items=parseScalarList(args[0]); if(!items.every(v=>v.k==='str')) throw new PyError('TypeError: sequence item is not a string'); return {newStr: items.map(v=>v.v).join(strState.value)}; }},
+  {sig:'.find(sub)', params:[{name:'sub',placeholder:"e.g. 'Py'"}], desc:'Returns the index of the first match, or -1 if not found.',
+    run:(args)=>{ const sub=parseSingleScalar(args[0]); if(sub.k!=='str') throw new PyError('TypeError: must be str'); return {ret:String(strState.value.indexOf(sub.v))}; }},
+  {sig:'.count(sub)', params:[{name:'sub',placeholder:"e.g. 'l'"}], desc:'Counts non-overlapping occurrences of sub.',
+    run:(args)=>{ const sub=parseSingleScalar(args[0]); if(sub.k!=='str'||sub.v==='') throw new PyError('TypeError: must be a non-empty string'); return {ret:String(strState.value.split(sub.v).length-1)}; }},
+  {sig:'.startswith(prefix)', params:[{name:'prefix',placeholder:"e.g. 'Hello'"}], desc:'True if the string begins with prefix.',
+    run:(args)=>{ const p=parseSingleScalar(args[0]); return {ret: strState.value.startsWith(p.v) ? 'True':'False'}; }},
+  {sig:'.endswith(suffix)', params:[{name:'suffix',placeholder:"e.g. '!'"}], desc:'True if the string ends with suffix.',
+    run:(args)=>{ const p=parseSingleScalar(args[0]); return {ret: strState.value.endsWith(p.v) ? 'True':'False'}; }},
+  {sig:'len(s)', params:[], desc:'Number of characters in the string.', run:()=>({ret:String(strState.value.length)})},
+  {sig:"s[0] = 'X'  (try it!)", params:[], desc:'Strings are locked once created, so this always fails.',
+    run:()=>{ throw new PyError("TypeError: 'str' object does not support item assignment"); }},
+];
+
+function renderStrViz(){
+  const viz=document.getElementById('strViz'); viz.innerHTML='';
+  if(strState.value.length===0){ viz.appendChild(el('div','empty-note','This string is empty.')); return; }
+  [...strState.value].forEach((ch,i)=>{
+    const box=el('div','box');
+    box.appendChild(el('div','idx', String(i)));
+    box.appendChild(el('div','val', escapeHtml(ch===' '?'␣':ch)));
+    box.appendChild(el('div','idxneg', String(i-strState.value.length)));
+    viz.appendChild(box);
+  });
+}
+function renderStrFacts(){
+  document.getElementById('strFacts').innerHTML = `
+    <div class="fact"><b>Mutable?</b>No, locked after creation</div>
+    <div class="fact"><b>Ordered?</b>Yes, character order matters</div>
+    <div class="fact"><b>Duplicates?</b>Characters can repeat</div>
+    <div class="fact"><b>Written as</b><code>'text'</code></div>`;
+}
+function refreshStrMethods(){
+  const grid=document.getElementById('strMethods');
+  const form=document.getElementById('strForm');
+  buildMethodGrid(grid, strMethods, (m)=>{
+    buildMethodForm(form, m, (argVals)=>{
+      const argStr=(m.params||[]).map((p,i)=>argVals[i]).filter(v=>v!=='');
+      let displayCode;
+      if(m.sig.startsWith('len(')) displayCode='len(s)';
+      else if(m.sig.startsWith("s[0]")) displayCode = m.sig.split('  ')[0];
+      else displayCode = `s${m.sig.slice(0,m.sig.indexOf('('))}(${argStr.join(', ')})`;
+      try{
+        const result=m.run(argVals);
+        logCode(strConsoleEl, displayCode);
+        if(result.newStr!==undefined){
+          logOut(strConsoleEl, reprStr(result.newStr));
+          strState.value = result.newStr;
+          renderStrViz();
+        } else if(result.list!==undefined){
+          logOut(strConsoleEl, reprList(result.list));
+          logNote(strConsoleEl, 'this returns a NEW list: the original string s is unchanged');
+        } else if(result.ret!==undefined && result.ret!=='None'){
+          logOut(strConsoleEl, result.ret);
+        } else if(result.ret==='None'){
+          logOut(strConsoleEl, 'None');
+        }
+      } catch(e){
+        logCode(strConsoleEl, displayCode);
+        logErr(strConsoleEl, e.message);
+      }
+    });
+  });
+}
+document.getElementById('strCreateBtn').addEventListener('click', ()=>{
+  strState.value = document.getElementById('strCreateInput').value;
+  strConsoleEl.innerHTML='';
+  logCode(strConsoleEl, `s = ${reprStr(strState.value)}`);
+  renderStrViz();
+});
+document.getElementById('strSliceBtn').addEventListener('click', ()=>{
+  const expr=document.getElementById('strSliceInput').value;
+  try{
+    const parsed=parseIndexOrSlice(expr);
+    const arr=[...strState.value];
+    const res=applySliceToArray(arr, parsed, 'string');
+    logCode(strConsoleEl, `s[${expr}]`);
+    logOut(strConsoleEl, res.single ? reprStr(res.value) : reprStr(res.value.join('')));
+  } catch(e){ logCode(strConsoleEl, `s[${expr}]`); logErr(strConsoleEl, e.message); }
+});
+document.getElementById('strClear').addEventListener('click', ()=>{ strConsoleEl.innerHTML=''; });
+
+renderStrFacts(); refreshStrMethods();
+strState.value = document.getElementById('strCreateInput').value;
+renderStrViz();
+logCode(strConsoleEl, `s = ${reprStr(strState.value)}`);
+
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+document.getElementById('tabNav').addEventListener('click', (ev)=>{
+  const btn=ev.target.closest('.tab-btn'); if(!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b===btn));
+  const target=btn.dataset.tab;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+target));
+});
+</script>
+</body>
+</html>
