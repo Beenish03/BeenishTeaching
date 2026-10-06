@@ -188,6 +188,32 @@ footer{text-align:center;color:var(--muted);font-size:13px;padding:20px}
 kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:11.5px}
 @media (max-width:1050px){.info-grid{grid-template-columns:1fr 1fr}.info-grid>div:nth-child(2){grid-column:1/-1;order:3}}
 @media (max-width:900px){.grid{grid-template-columns:1fr}.info-grid{grid-template-columns:1fr}nav.top{padding:10px 14px}}
+
+/* ---- layout v2: setup on top, graph + trace side by side ---- */
+.setup{margin-bottom:16px}
+.setup-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.setup-head h2{margin:0;font-size:19px}
+.setup-grid{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr;gap:0}
+.setup-grid .sec{margin:0;padding:0 18px;border-bottom:none;border-right:1px dashed var(--line)}
+.setup-grid .sec:first-child{padding-left:0}
+.setup-grid .sec:last-child{border-right:none;padding-right:0}
+.runbar{position:sticky;top:52px;z-index:15;margin-bottom:16px;padding:12px 16px}
+.runbar .bar{margin-bottom:8px}
+.runbar .narr{margin:0;min-height:0;font-size:14px}
+.work{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+#tablecard{margin-top:0;position:sticky;top:200px}
+#tablecard .tablewrap{max-height:calc(100vh - 260px);min-height:420px}
+#result{margin-top:16px}
+#info{margin:16px 0 0}
+table.run{font-size:12.5px}
+table.run th{padding:8px;font-size:11.5px;white-space:normal}
+table.run td{padding:7px 8px}
+table.run td.num{width:34px}
+table.run .bt{margin-top:6px;padding:6px 8px;border-radius:8px;background:#ecfdf5;border:1px solid #6ee7b7;color:#065f46;font-size:11.5px;font-family:'JetBrains Mono',monospace}
+table.run .pill{font-size:11px;padding:1px 6px;white-space:normal}
+@media (max-width:1200px){.setup-grid{grid-template-columns:1fr 1fr;row-gap:18px}.setup-grid .sec:nth-child(2){border-right:none;padding-right:0}.setup-grid .sec:nth-child(3){padding-left:0}}
+@media (max-width:1100px){.work{grid-template-columns:1fr}#tablecard{position:static}#tablecard .tablewrap{max-height:560px;min-height:0}.runbar{position:static}}
+@media (max-width:700px){.setup-grid{grid-template-columns:1fr}.setup-grid .sec{padding:0 0 16px;border-right:none;border-bottom:1px dashed var(--line)}}
 </style>
 </head>
 <body>
@@ -240,10 +266,9 @@ kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radi
     <button class="tab" data-algo="ucs" style="--c:#059669;--cs:#d1fae5"><b>UCS</b><span>Uniform Cost Search · Priority Queue</span></button>
   </div>
 
-  <section class="card" id="info"></section>
-
-  <div class="grid">
-    <aside class="card controls">
+  <section class="card setup controls" id="setup">
+    <div class="setup-head"><h2>Graph setup</h2><span class="help">Enter or generate a graph, choose start and goal nodes, then use the controls below to run the search.</span></div>
+    <div class="setup-grid">
       <div class="sec">
         <h3><span class="n">1</span>Graph input</h3>
         <label class="l" for="nodes">Nodes</label>
@@ -295,12 +320,11 @@ kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radi
         <div class="btns"><button class="btn" id="btnLayout">↻ Re-arrange layout</button></div>
         <div class="help">Tip: drag nodes on the graph to rearrange them. Keyboard: <kbd>→</kbd> next step, <kbd>←</kbd> previous step.</div>
       </div>
-    </aside>
+        </div>
+  </section>
 
-    <section class="vis">
-      <div class="card">
-        <div class="bar">
-          <h3 style="margin:0" id="graphTitle">Graph</h3>
+  <section class="card runbar">
+    <div class="bar">
           <div class="grp">
             <button class="btn" id="btnPrev" title="Previous step">◀ Prev</button>
             <button class="btn pri" id="btnStep" title="Next step">Step ▶</button>
@@ -310,6 +334,13 @@ kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radi
           </div>
           <span class="prog" id="prog">Not started</span>
         </div>
+    <div class="narr" id="narr"></div>
+  </section>
+
+  <div class="work">
+    <section class="vis">
+      <div class="card">
+        <h3 id="graphTitle">Graph</h3>
         <div class="svgwrap"><svg id="svg" viewBox="0 0 900 520" preserveAspectRatio="xMidYMid meet"></svg></div>
         <div class="legend">
           <span><i class="sw" style="background:var(--def);border-color:var(--def-b)"></i>Not reached</span>
@@ -324,21 +355,21 @@ kbd{background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radi
           <span><b style="display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#1e293b;color:#fff;font-size:9px">1</b>Expansion order</span>
         </div>
       </div>
-
       <div class="card">
-        <div class="narr" id="narr"></div>
         <div class="dshead"><h3 id="dsTitle">Data structure</h3><span class="help" id="dsHelp"></span></div>
         <div id="ds"></div>
       </div>
+    </section>
+
+    <section class="card" id="tablecard">
+      <h3 id="tableTitle">Step-by-step trace</h3>
+      <div class="tablewrap" id="tablewrap"></div>
     </section>
   </div>
 
   <section class="card" id="result"></section>
 
-  <section class="card" id="tablecard">
-    <h3 id="tableTitle">Step-by-step trace</h3>
-    <div class="tablewrap" id="tablewrap"></div>
-  </section>
+  <section class="card" id="info"></section>
 </main>
 
 <footer>Uninformed Searches · BFS, DFS and UCS · Single file, works offline on GitHub Pages</footer>
@@ -654,7 +685,7 @@ function runSearch(){
   const explored = [], exploredSet = new Set(), parent = {}, gBest = {}, reached = new Set();
   const disp = () => (algo === 'ucs' ? [...frontier].sort(cmpPQ) : frontier).map(e => ({...e}));
   const snap = o => steps.push(Object.assign({frontier:disp(), explored:[...explored], parent:{...parent}, gBest:{...gBest},
-                    newIds:[], children:[], popped:null, skipped:false, isGoal:false, done:false, found:false}, o));
+                    newIds:[], pch:{}, children:[], popped:null, skipped:false, isGoal:false, done:false, found:false}, o));
   const A = ALGOS[algo];
   const s0 = mk(S,0,[S]); frontier.push(s0); gBest[S] = 0; reached.add(S); parent[S] = null;
   if (early && isGoal(S)){
@@ -682,18 +713,19 @@ function runSearch(){
       continue;
     }
     explored.push(n); exploredSet.add(n);
-    if (algo !== 'bfs'){ parent[n] = e.path.length > 1 ? e.path[e.path.length-2] : null; gBest[n] = e.g; }
+    if (algo !== 'bfs') gBest[n] = e.g;
     if (!early && isGoal(n)){
       snap({iter, popped:e, isGoal:true, done:true, found:true, path:e.path, cost:e.g,
             note:`${verb} <b>${esc(n)}</b> ${where}. <b>${esc(n)} is a goal node</b>, so the search stops. Path: ${e.path.map(esc).join(' → ')}.`});
       break;
     }
-    const ch = [], newIds = []; let found = null;
+    const ch = [], newIds = [], pch = {}; let found = null;
+    const setParent = (c) => { pch[c] = (c in parent) && parent[c] !== n ? 'changed' : ((c in parent) ? 'same' : 'new'); parent[c] = n; };
     const nb = neighbors(n);
     if (algo === 'bfs'){
       for (const {to,cost} of nb){
         if (reached.has(to)){ ch.push({node:to, cost, status: exploredSet.has(to) ? 'explored' : 'infrontier'}); continue; }
-        reached.add(to); parent[to] = n;
+        reached.add(to); setParent(to);
         const ne = mk(to, e.g+cost, [...e.path,to]); frontier.push(ne); newIds.push(ne.id); gBest[to] = ne.g;
         ch.push({node:to, cost, status:'added'});
         if (early && isGoal(to)){ found = ne; break; }
@@ -707,17 +739,17 @@ function runSearch(){
         ch.push({node:to, cost, status: dup ? 'dup' : 'added'});
         if (early && isGoal(to)){ found = ne; break; }
       }
-      for (let i = toPush.length-1; i >= 0; i--){ frontier.push(toPush[i]); newIds.push(toPush[i].id); }
+      for (let i = toPush.length-1; i >= 0; i--){ frontier.push(toPush[i]); newIds.push(toPush[i].id); setParent(toPush[i].node); }
     } else {
       for (const {to,cost} of nb){
         const g = e.g + cost;
         if (exploredSet.has(to)){ ch.push({node:to, cost, g, status:'explored'}); continue; }
         const idx = frontier.findIndex(f => f.node === to);
         if (idx < 0){
-          const ne = mk(to, g, [...e.path,to]); frontier.push(ne); newIds.push(ne.id); gBest[to] = g;
+          const ne = mk(to, g, [...e.path,to]); frontier.push(ne); newIds.push(ne.id); gBest[to] = g; setParent(to);
           ch.push({node:to, cost, g, status:'added'});
         } else if (g < frontier[idx].g){
-          const old = frontier[idx].g; const ne = mk(to, g, [...e.path,to]); frontier[idx] = ne; newIds.push(ne.id); gBest[to] = g;
+          const old = frontier[idx].g; const ne = mk(to, g, [...e.path,to]); frontier[idx] = ne; newIds.push(ne.id); gBest[to] = g; setParent(to);
           ch.push({node:to, cost, g, old, status:'updated'});
         } else ch.push({node:to, cost, g, old:frontier[idx].g, status:'worse'});
       }
@@ -739,7 +771,7 @@ function runSearch(){
     note += ch.length ? `Children: ${ch.map(desc).join('; ')}.` : `${esc(n)} has no outgoing edges.`;
     if (algo === 'dfs' && newIds.length > 1) note += ` Children are pushed in reverse order so that <b>${esc(frontier[frontier.length-1].node)}</b> ends up on top.`;
     if (found) note += ` <b>${esc(found.node)} is a goal</b> (goal test on generation), so the search stops. Path: ${found.path.map(esc).join(' → ')}.`;
-    snap({iter, popped:e, children:ch, newIds, note, done:!!found, found:!!found, path:found?found.path:null, cost:found?found.g:null, earlyGoal:found?found.node:null});
+    snap({iter, popped:e, children:ch, newIds, pch, note, done:!!found, found:!!found, path:found?found.path:null, cost:found?found.g:null, earlyGoal:found?found.node:null});
     if (found) break;
   }
   return steps;
@@ -904,11 +936,16 @@ function chipNode(e, isNew){
   const label = paths ? e.path.map(esc).join('→') : esc(e.node);
   return `<span class="pill p-node ${isNew?'nw':''}">${label}${ucs?`:${fmt(e.g)}`:''}</span>`;
 }
+function backtrack(st){
+  const goal = st.path[st.path.length-1], chain = [goal]; let n = goal, guard = 0;
+  while (st.parent[n] != null && guard++ < 500){ n = st.parent[n]; chain.push(n); }
+  return chain;
+}
 function renderTable(scroll){
   const A = ALGOS[state.algo], wrap = $('#tablewrap');
   $('#tableTitle').textContent = `Step-by-step trace: ${A.name} (${A.ds})`;
-  const hdr = `<tr><th>#</th><th>${A.removeVerb} from ${A.ds.toLowerCase()}</th><th>Goal test</th><th>Children examined</th><th>${A.colHdr}</th><th>Explored set</th></tr>`;
-  if (state.cur < 0){ wrap.innerHTML = `<table class="run"><thead>${hdr}</thead><tbody><tr><td colspan="6" class="empty" style="text-align:center;padding:20px">No steps yet. Use Step, Auto play or Run complete.</td></tr></tbody></table>`; return; }
+  const hdr = `<tr><th>#</th><th>${A.removeVerb} from ${A.ds.toLowerCase()}</th><th>Goal test</th><th>Children examined</th><th>${A.colHdr}</th><th>Explored set</th><th>Parent<br><span style="font-weight:400;opacity:.8">(child ← parent)</span></th></tr>`;
+  if (state.cur < 0){ wrap.innerHTML = `<table class="run"><thead>${hdr}</thead><tbody><tr><td colspan="7" class="empty" style="text-align:center;padding:20px">No steps yet. Use Step, Auto play or Run complete.</td></tr></tbody></table>`; return; }
   let rows = '';
   for (let i = 0; i <= state.cur; i++){
     const st = state.steps[i];
@@ -944,8 +981,17 @@ function renderTable(scroll){
           : st.frontier.map(e => chipNode(e, nw.has(e.id))).join(''))
       : '<i>empty</i>';
     const ex = `{ ${st.explored.map(esc).join(', ')} }`;
+    const pc = st.pch || {};
+    let par = Object.entries(st.parent).sort((x,y) => (x[1]==null?-1:0) - (y[1]==null?-1:0) || cmpName(x[0],y[0])).map(([c,pp]) => {
+      const k = pc[c]; const cls = k==='new' ? 'p-add' : k==='changed' ? 'p-upd' : 'p-node';
+      return `<span class="pill ${cls}" style="font-family:'JetBrains Mono',monospace">${esc(c)} ← ${pp==null?'start':esc(pp)}</span>`;
+    }).join('');
+    if (st.done && st.found){
+      const chain = backtrack(st);
+      par += `<div class="bt"><b>Backtrack:</b> ${chain.map(esc).join(' ← ')}<br><b>Reverse:</b> ${[...chain].reverse().map(esc).join(' → ')}</div>`;
+    }
     const rc = [i === state.cur ? 'curr' : '', st.done && st.found ? 'goalrow' : '', st.failRow ? 'failrow' : ''].join(' ');
-    rows += `<tr class="${rc}" id="row${i}"><td class="num">${st.failRow ? 'end' : st.iter}</td><td>${rem}</td><td>${gt}</td><td>${ch}</td><td>${fr}</td><td class="mono" style="font-size:12.5px">${ex}</td></tr>`;
+    rows += `<tr class="${rc}" id="row${i}"><td class="num">${st.failRow ? 'end' : st.iter}</td><td>${rem}</td><td>${gt}</td><td>${ch}</td><td>${fr}</td><td class="mono" style="font-size:12.5px">${ex}</td><td>${par}</td></tr>`;
   }
   wrap.innerHTML = `<table class="run"><thead>${hdr}</thead><tbody>${rows}</tbody></table>`;
   if (scroll){ const r = $('#row'+state.cur); if (r) wrap.scrollTop = r.offsetTop - wrap.clientHeight/2; }
@@ -983,6 +1029,7 @@ function renderResult(){
         <div class="stat"><div class="k">Goal reached</div><div class="v">${esc(goal)}</div></div>
       </div>
       <div class="note"><b>Expansion order:</b> ${order}</div>
+      <div class="note"><b>Backtracking with parent pointers:</b> start at goal ${esc(goal)} and follow parents: ${backtrack(last).map(esc).join(' ← ')}. Reversed, this gives the final path ${last.path.map(esc).join(' → ')}.</div>
       <div class="note">${A.note}</div>
       <div class="note help">One iteration = one removal of a node from the ${A.ds.toLowerCase()} (iteration 0 is the initialization).</div>`;
   } else {
